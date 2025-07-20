@@ -1,6 +1,5 @@
-const API_BASE_URL = import.meta.env.PROD
-  ? 'https://vyapaal.vercel.app/api'
-  : 'http://localhost:5000/api';
+// Force production API URL to fix deployment issues
+const API_BASE_URL = 'https://vyapaal.vercel.app/api';
 
 interface ApiResponse<T = any> {
   data?: T;
