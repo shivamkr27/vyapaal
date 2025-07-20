@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://vyapaal.vercel.app/api'
+  : 'http://localhost:5000/api';
 
 interface ApiResponse<T = any> {
   data?: T;
