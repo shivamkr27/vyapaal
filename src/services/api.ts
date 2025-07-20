@@ -85,7 +85,7 @@ class ApiService {
 
   // Auth methods
   async register(userData: RegisterData): Promise<ApiResponse> {
-    const response = await this.request<ApiResponse>('/auth/register', {
+    const response = await this.request<ApiResponse>('/register', {
       method: 'POST',
       body: userData,
     });
@@ -96,7 +96,7 @@ class ApiService {
   }
 
   async login(credentials: LoginCredentials): Promise<ApiResponse> {
-    const response = await this.request<ApiResponse>('/auth/login', {
+    const response = await this.request<ApiResponse>('/login', {
       method: 'POST',
       body: credentials,
     });

@@ -3,12 +3,11 @@ import jwt from 'jsonwebtoken';
 import { MongoClient } from 'mongodb';
 
 export default async function handler(req, res) {
-  // Add CORS headers
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -26,7 +25,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    // Create new client for each request (serverless best practice)
+    // Connect to MongoDB
     client = new MongoClient(process.env.MONGODB_URI);
     await client.connect();
 
@@ -52,7 +51,7 @@ export default async function handler(req, res) {
       { expiresIn: '7d' }
     );
 
-    res.json({
+    return res.json({
       token,
       user: {
         id: user._id,
@@ -63,9 +62,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: error.message
     });
   } finally {
     if (client) {
