@@ -1,0 +1,254 @@
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-amber-500/20 to-orange-600/20 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-full filter blur-3xl animate-pulse animation-delay-2000"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl lg:text-6xl font-display font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Let's Connect
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              Ready to transform your business? We're here to help you get started on your journey.
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-3 gap-12">
+            {/* Contact Cards - Redesigned */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="lg:col-span-1 space-y-6"
+            >
+              {[
+                { 
+                  icon: Mail, 
+                  title: 'Email Us', 
+                  content: 'infovyapaal@gmail.com', 
+                  subtitle: 'We reply within 24 hours',
+                  action: 'mailto:infovyapaal@gmail.com',
+                  copyText: 'infovyapaal@gmail.com'
+                },
+                { 
+                  icon: Phone, 
+                  title: 'Call Us', 
+                  content: '+91-9608722125', 
+                  subtitle: 'Mon-Fri, 9AM-6PM IST',
+                  action: 'tel:+919608722125',
+                  copyText: '+91-9608722125'
+                },
+                { 
+                  icon: MapPin, 
+                  title: 'Visit Us', 
+                  content: 'Buxar, Bihar 802101', 
+                  subtitle: 'India',
+                  action: '#',
+                  copyText: 'Buxar, Bihar 802101, India'
+                }
+              ].map((contact, index) => (
+                <motion.div
+                  key={index}
+                  className="group relative"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-600/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                  <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 hover:border-white/30 transition-all duration-300">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                          <contact.icon className="h-7 w-7 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-lg mb-1">{contact.title}</h4>
+                          <p className="text-gray-300 font-medium">{contact.content}</p>
+                          <p className="text-gray-400 text-sm mt-1">{contact.subtitle}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(contact.copyText, contact.title)}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors group/copy"
+                        title="Copy to clipboard"
+                      >
+                        {copiedField === contact.title ? (
+                          <CheckCircle className="h-4 w-4 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-gray-400 group-hover/copy:text-white" />
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex space-x-3">
+                      <a
+                        href={contact.action}
+                        className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white py-2 px-4 rounded-lg font-medium text-center transition-all duration-300 flex items-center justify-center space-x-2"
+                      >
+                        <span>Contact</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Social Media - Redesigned */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                viewport={{ once: true }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-600/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
+                  <h4 className="text-lg font-bold text-white mb-4">Follow Our Journey</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { icon: Instagram, link: 'https://instagram.com/shivamkr27', label: 'Instagram', color: 'from-pink-500 to-purple-600' },
+                      { icon: Youtube, link: 'https://www.youtube.com/@Vyapaal', label: 'YouTube', color: 'from-red-500 to-red-600' },
+                      { icon: TwitterIcon, link: 'https://x.com/vyapaal?s=11', label: 'Twitter', color: 'from-blue-400 to-blue-600' },
+                      { icon: Facebook, link: '#', label: 'Facebook', color: 'from-blue-600 to-blue-700' }
+                    ].map((social, index) => (
+                      <motion.a
+                        key={index}
+                        href={social.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center space-x-3 p-3 bg-gradient-to-r ${social.color} rounded-xl hover:scale-105 transition-all duration-300 group/social`}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <social.icon className="h-5 w-5 text-white" />
+                        <span className="text-white font-medium text-sm">{social.label}</span>
+                      </motion.a>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Contact Form - Completely Redesigned */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="lg:col-span-2"
+            >
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-600/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20">
+                  <div className="flex items-center space-x-3 mb-8">
+                    <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                      <Send className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-display font-bold text-white">Send us a Message</h3>
+                      <p className="text-gray-300">We'll get back to you within 24 hours</p>
+                    </div>
+                  </div>
+
+                  {contactSuccess && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mb-6 p-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-6 w-6 text-emerald-400" />
+                        <div>
+                          <p className="text-emerald-300 font-medium">Message sent successfully!</p>
+                          <p className="text-emerald-400 text-sm">We'll get back to you soon.</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <form onSubmit={handleContactSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-gray-300 text-sm font-medium">First Name</label>
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={contactForm.firstName}
+                          onChange={handleContactInputChange}
+                          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
+                          placeholder="Enter your first name"
+                        />
+                        {contactErrors.firstName && <p className="text-red-400 text-sm">{contactErrors.firstName}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-gray-300 text-sm font-medium">Last Name</label>
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={contactForm.lastName}
+                          onChange={handleContactInputChange}
+                          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
+                          placeholder="Enter your last name"
+                        />
+                        {contactErrors.lastName && <p className="text-red-400 text-sm">{contactErrors.lastName}</p>}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-gray-300 text-sm font-medium">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={contactForm.email}
+                        onChange={handleContactInputChange}
+                        className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
+                        placeholder="Enter your email address"
+                      />
+                      {contactErrors.email && <p className="text-red-400 text-sm">{contactErrors.email}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-gray-300 text-sm font-medium">Message</label>
+                      <textarea
+                        name="message"
+                        value={contactForm.message}
+                        onChange={handleContactInputChange}
+                        rows={5}
+                        className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300 resize-none"
+                        placeholder="Tell us about your project, questions, or how we can help you..."
+                      />
+                      {contactErrors.message && <p className="text-red-400 text-sm">{contactErrors.message}</p>}
+                    </div>
+
+                    {contactErrors.submit && (
+                      <p className="text-red-400 text-sm text-center">{contactErrors.submit}</p>
+                    )}
+
+                    <motion.button
+                      type="submit"
+                      disabled={isContactLoading}
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl flex items-center justify-center space-x-3"
+                      whileHover={{ scale: isContactLoading ? 1 : 1.02, y: isContactLoading ? 0 : -2 }}
+                    >
+                      {isContactLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-5 w-5" />
+                          <span>Send Message</span>
+                        </>
+                      )}
+                    </motion.button>
+                  </form>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
