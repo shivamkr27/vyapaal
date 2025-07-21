@@ -37,6 +37,13 @@ interface OrderData {
   deliveryDate: string;
 }
 
+// Custom request options interface
+interface ApiRequestOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: any;
+}
+
 class ApiService {
   private token: string | null;
 
@@ -54,37 +61,67 @@ class ApiService {
     localStorage.removeItem('vyapaal_token');
   }
 
-  async request<T = any>(endpoint: string, options: RequestInit & { body?: any } = {}): Promise<T> {
+  async request<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
     // Handle body serialization
     let body: string | undefined;
-    if (options.body && typeof options.body === 'object') {
-      body = JSON.stringify(options.body);
-    } else if (options.body && typeof options.body === 'string') {
-      body = options.body;
+    if (options.body) {
+      if (typeof options.body === 'object') {
+        body = JSON.stringify(options.body);
+      } else if (typeof options.body === 'string') {
+        body = options.body;
+      }
     }
 
+    // Prepare headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.token && { Authorization: `Bearer ${this.token}` }),
+      ...options.headers,
+    };
+
     const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      },
-      ...options,
+      method: options.method || 'GET',
+      headers,
       body,
     };
 
     try {
+      console.log(`🔄 API Request: ${options.method || 'GET'} ${url}`);
       const response = await fetch(url, config);
-      const data = await response.json();
+
+      // Get response text first to handle both JSON and HTML responses
+      const responseText = await response.text();
+      console.log(`📄 Raw response (${response.status}):`, responseText.substring(0, 200));
 
       if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
+        console.error(`❌ API Error: ${response.status} ${response.statusText}`, responseText);
+
+        // Try to parse as JSON first
+        try {
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        } catch {
+          // If not JSON, check if it's HTML (common error page)
+          if (responseText.includes('<html') || responseText.includes('<!DOCTYPE')) {
+            throw new Error(`Server returned HTML instead of JSON. This usually means the API endpoint doesn't exist or there's a routing issue. Status: ${response.status}`);
+          }
+          throw new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText.substring(0, 100)}`);
+        }
       }
 
-      return data;
+      // Try to parse successful response as JSON
+      try {
+        const data = JSON.parse(responseText);
+        console.log(`✅ API Success: ${options.method || 'GET'} ${url}`, data);
+        return data;
+      } catch (parseError) {
+        console.error('❌ Failed to parse JSON response:', responseText.substring(0, 200));
+        throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}`);
+      }
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('❌ API request failed:', error);
       throw error;
     }
   }
