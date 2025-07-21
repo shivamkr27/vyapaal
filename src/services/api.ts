@@ -54,19 +54,25 @@ class ApiService {
     localStorage.removeItem('vyapaal_token');
   }
 
-  async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  async request<T = any>(endpoint: string, options: RequestInit & { body?: any } = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
+
+    // Handle body serialization
+    let body: string | undefined;
+    if (options.body && typeof options.body === 'object') {
+      body = JSON.stringify(options.body);
+    } else if (options.body && typeof options.body === 'string') {
+      body = options.body;
+    }
+
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
       },
       ...options,
+      body,
     };
-
-    if (config.body && typeof config.body === 'object') {
-      config.body = JSON.stringify(config.body);
-    }
 
     try {
       const response = await fetch(url, config);

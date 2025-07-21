@@ -1,12 +1,7 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { MongoClient } from 'mongodb';
-
 export default async function handler(req, res) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -16,8 +11,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  let client;
-
   try {
     const { name, email, password } = req.body;
 
@@ -25,46 +18,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // Connect to MongoDB
-    client = new MongoClient(process.env.MONGODB_URI);
-    await client.connect();
-
-    const db = client.db('vyapaal');
-    const users = db.collection('users');
-
-    // Check if user exists
-    const existingUser = await users.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user
-    const result = await users.insertOne({
+    // For now, return a mock successful response to test the connection
+    // We'll add MongoDB later once the basic connection works
+    const mockUser = {
+      id: Date.now().toString(),
       name,
       email,
-      password: hashedPassword,
-      createdAt: new Date()
-    });
+      createdAt: new Date().toISOString()
+    };
 
-    // Generate JWT
-    const token = jwt.sign(
-      { userId: result.insertedId },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const mockToken = 'mock-jwt-token-' + Date.now();
 
     return res.status(201).json({
-      token,
-      user: {
-        id: result.insertedId,
-        name,
-        email,
-        createdAt: new Date()
-      }
+      token: mockToken,
+      user: mockUser
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -72,9 +39,5 @@ export default async function handler(req, res) {
       message: 'Server error',
       error: error.message
     });
-  } finally {
-    if (client) {
-      await client.close();
-    }
   }
 }
