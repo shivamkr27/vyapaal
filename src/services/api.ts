@@ -50,22 +50,19 @@ class ApiService {
   private token: string | null;
 
   constructor() {
-    // Try to get token from localStorage on initialization
-    this.token = localStorage.getItem('vyapaal_auth_token');
+    this.token = null;
   }
 
   setToken(token: string): void {
     this.token = token;
-    localStorage.setItem('vyapaal_auth_token', token);
   }
 
   removeToken(): void {
     this.token = null;
-    localStorage.removeItem('vyapaal_auth_token');
   }
 
   getToken(): string | null {
-    return this.token || localStorage.getItem('vyapaal_auth_token');
+    return this.token;
   }
 
   async request<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
@@ -267,4 +264,33 @@ class ApiService {
   }
 }
 
-export default new ApiService();
+export default new ApiService();  // B
+usiness setup
+  async updateBusiness(businessData: { businessName: string; businessCode: string; isBusinessOwner: boolean }): Promise < any > {
+  return this.request('/auth/business', {
+    method: 'PUT',
+    body: businessData,
+  });
+}
+
+  // User preferences
+  async updatePreferences(preferences: { theme: string; notifications: boolean; language: string }): Promise < any > {
+  return this.request('/auth/preferences', {
+    method: 'PUT',
+    body: preferences,
+  });
+}
+
+  // Alerts
+  async addAlert(alertData: { type: string; message: string }): Promise < any > {
+  return this.request('/auth/alerts', {
+    method: 'POST',
+    body: alertData,
+  });
+}
+
+  async clearAlerts(): Promise < any > {
+  return this.request('/auth/alerts', {
+    method: 'DELETE',
+  });
+}

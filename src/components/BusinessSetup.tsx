@@ -86,14 +86,14 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
         businessName: business.businessName
       };
 
-      // Save updated user
-      const users = JSON.parse(localStorage.getItem('vyapaal_users') || '[]');
-      const userIndex = users.findIndex((u: User) => u.id === user.id);
-      if (userIndex >= 0) {
-        users[userIndex] = updatedUser;
-        localStorage.setItem('vyapaal_users', JSON.stringify(users));
-      }
+      // Update business in database
+      const response = await apiService.updateBusiness({
+        businessName: business.businessName,
+        businessCode: business.businessCode,
+        isBusinessOwner: true
+      });
 
+      const updatedUser = response.user;
       setBusinessCreated(business);
 
     } catch (error) {
@@ -133,15 +133,14 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
         businessName: business.businessName
       };
 
-      // Save updated user
-      const users = JSON.parse(localStorage.getItem('vyapaal_users') || '[]');
-      const userIndex = users.findIndex((u: User) => u.id === user.id);
-      if (userIndex >= 0) {
-        users[userIndex] = updatedUser;
-        localStorage.setItem('vyapaal_users', JSON.stringify(users));
-      }
+      // Update business in database
+      const response = await apiService.updateBusiness({
+        businessName: formData.businessName,
+        businessCode: formData.businessCode,
+        isBusinessOwner: false
+      });
 
-      onComplete(updatedUser);
+      onComplete(response.user);
 
     } catch (error) {
       setErrors({ submit: 'Failed to join business. Please try again.' });

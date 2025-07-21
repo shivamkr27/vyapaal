@@ -3,11 +3,24 @@ export interface User {
   email: string;
   name: string;
   createdAt: string;
-  businessId?: string; // ID of the business they belong to
-  businessCode?: string; // Unique business code (only for business owners)
-  role?: UserRole; // Role in the business
-  isBusinessOwner?: boolean; // Whether they own a business
-  businessName?: string; // Name of their business
+  business?: {
+    id: string;
+    businessName: string;
+    businessCode: string;
+    isBusinessOwner: boolean;
+  };
+  preferences?: {
+    theme: string;
+    notifications: boolean;
+    language: string;
+  };
+  alerts?: Array<{
+    id: string;
+    type: string;
+    message: string;
+    timestamp: string;
+    read: boolean;
+  }>;
 }
 
 export interface Business {

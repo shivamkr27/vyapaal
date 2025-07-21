@@ -64,11 +64,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   }>>([]);
 
   useEffect(() => {
-    // Load user preferences
-    const savedTheme = localStorage.getItem(`vyapaal_theme_${user.id}`) as 'light' | 'dark' || 'light';
-    const savedNotifications = localStorage.getItem(`vyapaal_notifications_${user.id}`) === 'true';
-    const savedLanguage = localStorage.getItem(`vyapaal_language_${user.id}`) || 'en';
-    const savedAlerts = JSON.parse(localStorage.getItem(`vyapaal_alerts_${user.id}`) || '[]');
+    // Load user preferences from database
+    const savedTheme = user.preferences?.theme as 'light' | 'dark' || 'light';
+    const savedNotifications = user.preferences?.notifications || false;
+    const savedLanguage = user.preferences?.language || 'en';
+    const savedAlerts = user.alerts || [];
 
     setTheme(savedTheme);
     setNotifications(savedNotifications);
@@ -107,11 +107,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     }
   }, [user.email]);
 
-  const savePreferences = () => {
-    localStorage.setItem(`vyapaal_theme_${user.id}`, theme);
-    localStorage.setItem(`vyapaal_notifications_${user.id}`, notifications.toString());
-    localStorage.setItem(`vyapaal_language_${user.id}`, language);
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+  const savePreferences = async () => {
+    try {
+      await apiService.updatePreferences({ theme, notifications, language });
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+    }
   };
 
   const addAlert = (type: 'info' | 'warning' | 'error' | 'success', title: string, message: string) => {
@@ -122,14 +124,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       message,
       createdAt: new Date().toISOString()
     };
-    const updatedAlerts = [newAlert, ...alerts].slice(0, 50); // Keep only last 50 alerts
-    setAlerts(updatedAlerts);
-    localStorage.setItem(`vyapaal_alerts_${user.id}`, JSON.stringify(updatedAlerts));
+    try {
+      const response = await apiService.addAlert({ type: newAlert.type, message: newAlert.message });
+      const updatedAlerts = [response.alert, ...alerts].slice(0, 50);
+      setAlerts(updatedAlerts);
+    } catch (error) {
+      console.error('Failed to add alert:', error);
+    }
   };
 
-  const clearAlerts = () => {
-    setAlerts([]);
-    localStorage.setItem(`vyapaal_alerts_${user.id}`, '[]');
+  const clearAlerts = async () => {
+    try {
+      await apiService.clearAlerts();
+      setAlerts([]);
+    } catch (error) {
+      console.error('Failed to clear alerts:', error);
+    }
   };
 
   // Filter menu items based on user permissions

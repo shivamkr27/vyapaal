@@ -12,57 +12,29 @@ function App() {
   const [needsBusinessSetup, setNeedsBusinessSetup] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const storedUser = localStorage.getItem('vyapaal_current_user');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        setCurrentUser(user);
-
-        // For existing users, check if they're associated with any business
-        const userBusiness = getUserBusinessByEmail(user.email);
-        if (!userBusiness) {
-          setNeedsBusinessSetup(true);
-        } else {
-          setNeedsBusinessSetup(false);
-        }
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('vyapaal_current_user');
-      }
-    }
+    // No persistence - user must login each time
     setIsLoading(false);
   }, []);
 
   const handleLogin = (user: User, isNewRegistration: boolean = false) => {
     setCurrentUser(user);
-    localStorage.setItem('vyapaal_current_user', JSON.stringify(user));
 
-    // Only check for business setup if this is a new registration
-    // For existing users (login), check if they have business association
-    if (isNewRegistration) {
+    // Check if business setup is needed based on database data
+    if (isNewRegistration || !user.business || !user.business.businessName) {
       setNeedsBusinessSetup(true);
     } else {
-      // For existing users, check if they're associated with any business
-      const userBusiness = getUserBusinessByEmail(user.email);
-      if (!userBusiness) {
-        setNeedsBusinessSetup(true);
-      } else {
-        setNeedsBusinessSetup(false);
-      }
+      setNeedsBusinessSetup(false);
     }
   };
 
   const handleBusinessSetupComplete = (updatedUser: User) => {
     setCurrentUser(updatedUser);
-    localStorage.setItem('vyapaal_current_user', JSON.stringify(updatedUser));
     setNeedsBusinessSetup(false);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setNeedsBusinessSetup(false);
-    localStorage.removeItem('vyapaal_current_user');
     // Clear API token
     import('./services/api').then(({ default: apiService }) => {
       apiService.removeToken();
