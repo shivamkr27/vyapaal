@@ -76,16 +76,6 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
       const business = createBusiness(formData.businessName, user.email, user.id);
       saveBusiness(business);
 
-      // Update user
-      const updatedUser: User = {
-        ...user,
-        businessId: business.id,
-        businessCode: business.businessCode,
-        role: 'owner',
-        isBusinessOwner: true,
-        businessName: business.businessName
-      };
-
       // Update business in database
       const response = await apiService.updateBusiness({
         businessName: business.businessName,
@@ -123,15 +113,6 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
       }
 
       const { business, role, staffId } = result;
-
-      // Update user with business and role information
-      const updatedUser: User = {
-        ...user,
-        businessId: business.id,
-        role: role.roleName === 'Business Owner' ? 'owner' : 'custom',
-        isBusinessOwner: false,
-        businessName: business.businessName
-      };
 
       // Update business in database
       const response = await apiService.updateBusiness({

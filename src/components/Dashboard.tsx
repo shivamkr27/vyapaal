@@ -116,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     }
   };
 
-  const addAlert = (type: 'info' | 'warning' | 'error' | 'success', title: string, message: string) => {
+  const addAlert = async (type: 'info' | 'warning' | 'error' | 'success', title: string, message: string) => {
     const newAlert = {
       id: Date.now().toString(),
       type,
