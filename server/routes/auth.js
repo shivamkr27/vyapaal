@@ -96,8 +96,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-export default router;/
-  / Update user business
+// Update user business
 router.put('/business', async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -224,3 +223,5 @@ router.delete('/alerts', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+export default router;
