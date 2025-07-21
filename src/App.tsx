@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import BusinessSetup from './components/BusinessSetup';
@@ -66,6 +67,7 @@ function App() {
       ) : (
         <LandingPage onLogin={handleLogin} />
       )}
+      <SpeedInsights />
     </>
   );
 }
