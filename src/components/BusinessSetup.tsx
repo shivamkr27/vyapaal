@@ -29,6 +29,7 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [businessCreated, setBusinessCreated] = useState<Business | null>(null);
+  const [updatedUser, setUpdatedUser] = useState<User | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -83,7 +84,7 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
         isBusinessOwner: true
       });
 
-      const updatedUser = response.user;
+      setUpdatedUser(response.user);
       setBusinessCreated(business);
 
     } catch (error) {
@@ -131,15 +132,7 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
   };
 
   const handleCompleteSetup = () => {
-    if (businessCreated) {
-      const updatedUser: User = {
-        ...user,
-        businessId: businessCreated.id,
-        businessCode: businessCreated.businessCode,
-        role: 'owner',
-        isBusinessOwner: true,
-        businessName: businessCreated.businessName
-      };
+    if (businessCreated && updatedUser) {
       onComplete(updatedUser);
     }
   };
