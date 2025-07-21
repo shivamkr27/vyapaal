@@ -262,35 +262,36 @@ class ApiService {
   async healthCheck(): Promise<{ message: string; timestamp: string }> {
     return this.request('/health');
   }
-}
 
-export default new ApiService();  // B
-usiness setup
-  async updateBusiness(businessData: { businessName: string; businessCode: string; isBusinessOwner: boolean }): Promise < any > {
-  return this.request('/auth/business', {
-    method: 'PUT',
-    body: businessData,
-  });
-}
+  // Business setup
+  async updateBusiness(businessData: { businessName: string; businessCode: string; isBusinessOwner: boolean }): Promise<any> {
+    return this.request('/auth/business', {
+      method: 'PUT',
+      body: businessData,
+    });
+  }
 
   // User preferences
-  async updatePreferences(preferences: { theme: string; notifications: boolean; language: string }): Promise < any > {
-  return this.request('/auth/preferences', {
-    method: 'PUT',
-    body: preferences,
-  });
-}
+  async updatePreferences(preferences: { theme: string; notifications: boolean; language: string }): Promise<any> {
+    return this.request('/auth/preferences', {
+      method: 'PUT',
+      body: preferences,
+    });
+  }
 
   // Alerts
-  async addAlert(alertData: { type: string; message: string }): Promise < any > {
-  return this.request('/auth/alerts', {
-    method: 'POST',
-    body: alertData,
-  });
+  async addAlert(alertData: { type: string; message: string }): Promise<any> {
+    return this.request('/auth/alerts', {
+      method: 'POST',
+      body: alertData,
+    });
+  }
+
+  async clearAlerts(): Promise<any> {
+    return this.request('/auth/alerts', {
+      method: 'DELETE',
+    });
+  }
 }
 
-  async clearAlerts(): Promise < any > {
-  return this.request('/auth/alerts', {
-    method: 'DELETE',
-  });
-}
+export default new ApiService();
