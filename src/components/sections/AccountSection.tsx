@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Search, Download, User as UserIcon } from 'lucide-react';
 import { Order, Customer, User, Permission } from '../../types';
 import { exportToExcel, exportToPDF } from '../../utils/export';
-import { useDataUserId } from '../UserDataProvider';
+import { useDataUserId, useDataSource } from '../UserDataProvider';
+import apiService from '../../services/api';
 
 interface AccountSectionProps {
   user: User;
@@ -16,19 +17,35 @@ const AccountSection: React.FC<AccountSectionProps> = ({ user }) => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (dataUserId) {
-      loadData();
-    }
+    loadData();
   }, [dataUserId]);
 
-  const loadData = () => {
+  const loadData = async () => {
     if (!dataUserId) return;
-    const storedCustomers = JSON.parse(localStorage.getItem(`vyapaal_customers_${dataUserId}`) || '[]');
-    const storedOrders = JSON.parse(localStorage.getItem(`vyapaal_orders_${dataUserId}`) || '[]');
-    setCustomers(storedCustomers);
-    setOrders(storedOrders);
+
+    setLoading(true);
+    try {
+      console.log('🔄 Loading customers and orders from MongoDB API...');
+      const [customersData, ordersData] = await Promise.all([
+        apiService.getCustomers(),
+        apiService.getOrders()
+      ]);
+
+      setCustomers(customersData || []);
+      setOrders(ordersData || []);
+      console.log('✅ Loaded from API:', {
+        customers: customersData?.length || 0,
+        orders: ordersData?.length || 0
+      });
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
+      alert('Failed to load customer data. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCustomerSelect = (customer: Customer) => {

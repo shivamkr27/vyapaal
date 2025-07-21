@@ -43,12 +43,9 @@ export const useDataUserId = () => {
   return dataUserId;
 };
 
-// Helper hook to determine if user should use API or localStorage
+// Helper hook - always use API only
 export const useDataSource = () => {
-  const { user } = useUserData();
-  // Use MongoDB API for all data operations
   return {
-    useApi: true,         // MongoDB Atlas enabled
-    useLocalStorage: false // localStorage disabled
+    useApi: true
   };
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, Package, DollarSign, Users, Download, BarChart3 } from 'lucide-react';
 import { Order, User } from '../../types';
 import { exportToExcel, exportToPDF } from '../../utils/export';
+import apiService from '../../services/api';
 
 interface ReportsSectionProps {
   user: User;
@@ -37,22 +38,29 @@ const ReportsSection: React.FC<ReportsSectionProps> = ({ user }) => {
     generateMonthlyReport();
   }, [orders, selectedMonth]);
 
-  const loadOrders = () => {
-    const storedOrders = JSON.parse(localStorage.getItem(`vyapaal_orders_${user.id}`) || '[]');
-    setOrders(storedOrders);
+  const loadOrders = async () => {
+    try {
+      console.log('🔄 Loading orders from MongoDB API...');
+      const ordersData = await apiService.getOrders();
+      setOrders(ordersData || []);
+      console.log('✅ Loaded orders from API:', ordersData?.length || 0);
+    } catch (error) {
+      console.error('❌ Error loading orders:', error);
+      alert('Failed to load orders. Please check your connection and try again.');
+    }
   };
 
   const generateMonthlyReport = () => {
     const [year, month] = selectedMonth.split('-');
     const filteredOrders = orders.filter(order => {
       const orderDate = new Date(order.createdAt);
-      return orderDate.getFullYear() === parseInt(year) && 
-             orderDate.getMonth() === parseInt(month) - 1;
+      return orderDate.getFullYear() === parseInt(year) &&
+        orderDate.getMonth() === parseInt(month) - 1;
     });
 
     // Calculate monthly sales by item and category
     const salesMap = new Map<string, MonthlySales>();
-    
+
     filteredOrders.forEach(order => {
       const key = `${order.item}-${order.category}`;
       if (salesMap.has(key)) {
@@ -113,9 +121,9 @@ const ReportsSection: React.FC<ReportsSectionProps> = ({ user }) => {
       'Average per Order': Math.round(monthlyStats.averageOrderValue)
     });
 
-    const monthName = new Date(selectedMonth + '-01').toLocaleDateString('en-IN', { 
-      year: 'numeric', 
-      month: 'long' 
+    const monthName = new Date(selectedMonth + '-01').toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long'
     });
 
     if (type === 'excel') {
@@ -125,9 +133,9 @@ const ReportsSection: React.FC<ReportsSectionProps> = ({ user }) => {
     }
   };
 
-  const monthName = new Date(selectedMonth + '-01').toLocaleDateString('en-IN', { 
-    year: 'numeric', 
-    month: 'long' 
+  const monthName = new Date(selectedMonth + '-01').toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'long'
   });
 
   return (

@@ -178,40 +178,27 @@ export const addStaffToBusiness = (
   };
 };
 
-// Get business by code
+// Get business by code - API only (placeholder)
 export const getBusinessByCode = (businessCode: string): Business | null => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  return businesses.find((b: Business) => b.businessCode === businessCode) || null;
+  console.log('🔄 Business API not implemented yet');
+  return null;
 };
 
-// Save business to localStorage
+// Save business - API only (placeholder)
 export const saveBusiness = (business: Business): void => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  const existingIndex = businesses.findIndex((b: Business) => b.id === business.id);
-
-  if (existingIndex >= 0) {
-    businesses[existingIndex] = business;
-  } else {
-    businesses.push(business);
-  }
-
-  localStorage.setItem('vyapaal_businesses', JSON.stringify(businesses));
+  console.log('🔄 Business save API not implemented yet');
 };
 
-// Get user's business
+// Get user's business - API only (placeholder)
 export const getUserBusiness = (userId: string): Business | null => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  return businesses.find((b: Business) =>
-    b.ownerId === userId || b.staff.some((s: BusinessStaff) => s.email === userId)
-  ) || null;
+  console.log('🔄 Business API not implemented yet');
+  return null;
 };
 
-// Get user's business by email (for API compatibility)
+// Get user's business by email - API only (placeholder)
 export const getUserBusinessByEmail = (userEmail: string): Business | null => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  return businesses.find((b: Business) =>
-    b.ownerEmail === userEmail || b.staff.some((s: BusinessStaff) => s.email === userEmail)
-  ) || null;
+  console.log('🔄 Business API not implemented yet');
+  return null;
 };
 
 // Get the correct user ID for localStorage data (for API compatibility)
@@ -236,25 +223,9 @@ export const getDataUserId = (userEmail: string): string | null => {
   return null;
 };
 
-// Get business and role by role code
+// Get business and role by role code - API only (placeholder)
 export const getBusinessByRoleCode = (roleCode: string): { business: Business; role: BusinessRole } | null => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-
-  console.log('🔍 DEBUG: Searching for role code:', roleCode);
-  console.log('🔍 DEBUG: Available businesses:', businesses.length);
-
-  for (const business of businesses) {
-    console.log('🔍 DEBUG: Checking business:', business.businessName);
-    console.log('🔍 DEBUG: Available role codes:', business.roles.map((r: BusinessRole) => r.roleCode));
-
-    const role = business.roles.find((r: BusinessRole) => r.roleCode === roleCode);
-    if (role) {
-      console.log('✅ DEBUG: Found matching role:', role.roleName);
-      return { business, role };
-    }
-  }
-
-  console.log('❌ DEBUG: No matching role code found');
+  console.log('🔄 Business role API not implemented yet');
   return null;
 };
 
@@ -306,126 +277,36 @@ export const joinBusinessWithRoleCode = (
   return { business: updatedBusiness, role, staffId };
 };
 
-// Update role permissions (for editing roles)
+// Update role permissions - API only (placeholder)
 export const updateRolePermissions = (
   businessId: string,
   roleId: string,
   newPermissions: Permission[]
 ): Business | null => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  const businessIndex = businesses.findIndex((b: Business) => b.id === businessId);
-
-  if (businessIndex === -1) return null;
-
-  const business = businesses[businessIndex];
-  const roleIndex = business.roles.findIndex((r: BusinessRole) => r.id === roleId);
-
-  if (roleIndex === -1) return null;
-
-  // Update role permissions
-  business.roles[roleIndex].permissions = newPermissions;
-
-  // Update all staff members with this role to have new permissions
-  business.staff = business.staff.map((staff: BusinessStaff) =>
-    staff.role === business.roles[roleIndex].roleName
-      ? { ...staff, permissions: newPermissions }
-      : staff
-  );
-
-  businesses[businessIndex] = business;
-  localStorage.setItem('vyapaal_businesses', JSON.stringify(businesses));
-
-  return business;
+  console.log('🔄 Role permissions API not implemented yet');
+  return null;
 };
 
-// Update role name
+// Update role name - API only (placeholder)
 export const updateRoleName = (
   businessId: string,
   roleId: string,
   newRoleName: string
 ): Business | null => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  const businessIndex = businesses.findIndex((b: Business) => b.id === businessId);
-
-  if (businessIndex === -1) return null;
-
-  const business = businesses[businessIndex];
-  const roleIndex = business.roles.findIndex((r: BusinessRole) => r.id === roleId);
-
-  if (roleIndex === -1) return null;
-
-  const oldRoleName = business.roles[roleIndex].roleName;
-
-  // Update role name
-  business.roles[roleIndex].roleName = newRoleName;
-
-  // Update all staff members with this role
-  business.staff = business.staff.map((staff: BusinessStaff) =>
-    staff.role === oldRoleName
-      ? { ...staff, role: newRoleName }
-      : staff
-  );
-
-  businesses[businessIndex] = business;
-  localStorage.setItem('vyapaal_businesses', JSON.stringify(businesses));
-
-  return business;
+  console.log('🔄 Role name update API not implemented yet');
+  return null;
 };
 
-// Delete custom role (can't delete default roles)
+// Delete custom role - API only (placeholder)
 export const deleteRole = (
   businessId: string,
   roleId: string
 ): Business | null => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  const businessIndex = businesses.findIndex((b: Business) => b.id === businessId);
-
-  if (businessIndex === -1) return null;
-
-  const business = businesses[businessIndex];
-  const role = business.roles.find((r: BusinessRole) => r.id === roleId);
-
-  if (!role) return null;
-
-  // Don't allow deleting default roles
-  const defaultRoleIds = ['role_owner', 'role_manager', 'role_accountant', 'role_delivery', 'role_sales', 'role_inventory'];
-  if (defaultRoleIds.includes(roleId)) {
-    console.error('Cannot delete default roles');
-    return null;
-  }
-
-  // Check if any staff has this role
-  const staffWithRole = business.staff.filter((s: BusinessStaff) => s.role === role.roleName);
-  if (staffWithRole.length > 0) {
-    console.error('Cannot delete role - staff members are assigned to this role');
-    return null;
-  }
-
-  // Remove role
-  business.roles = business.roles.filter((r: BusinessRole) => r.id !== roleId);
-
-  businesses[businessIndex] = business;
-  localStorage.setItem('vyapaal_businesses', JSON.stringify(businesses));
-
-  return business;
+  console.log('🔄 Role delete API not implemented yet');
+  return null;
 };
 
-// Debug function to show all role codes for a business
+// Debug function - API only (placeholder)
 export const debugBusinessRoles = (businessId: string): void => {
-  const businesses: Business[] = JSON.parse(localStorage.getItem('vyapaal_businesses') || '[]');
-  const business = businesses.find((b: Business) => b.id === businessId);
-
-  if (business) {
-    console.log('🔍 DEBUG: Business Name:', business.businessName);
-    console.log('🔍 DEBUG: Business Code:', business.businessCode);
-    console.log('🔍 DEBUG: Available Role Codes (USE THESE TO JOIN):');
-    business.roles.forEach((role: BusinessRole) => {
-      console.log(`  ✅ ${role.roleName}: ${role.roleCode} ← USE THIS CODE`);
-    });
-    console.log('🔍 DEBUG: Current Staff (THESE ARE STAFF IDs, NOT JOIN CODES):');
-    business.staff.forEach((staff: BusinessStaff) => {
-      console.log(`  👤 ${staff.name} (${staff.email}): Role=${staff.role}, StaffID=${staff.staffId}`);
-    });
-    console.log('\n💡 TIP: Staff should use ROLE CODES (like ABC123-LAB456) to join, NOT Staff IDs (like ABC123001)');
-  }
+  console.log('🔄 Business debug API not implemented yet');
 };

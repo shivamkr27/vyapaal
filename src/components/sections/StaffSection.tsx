@@ -18,41 +18,40 @@ const StaffSection: React.FC<StaffSectionProps> = ({ user }) => {
     loadStaff();
   }, [user.id]);
 
-  const loadStaff = () => {
-    const storedStaff = JSON.parse(localStorage.getItem(`vyapaal_staff_${user.id}`) || '[]');
-    setStaff(storedStaff);
-  };
-
-  const handleSaveStaff = (staffData: Omit<Staff, 'id' | 'userId' | 'createdAt'>) => {
-    let updatedStaff: Staff[] = [];
-
-    if (editingStaff) {
-      updatedStaff = staff.map(s =>
-        s.id === editingStaff.id
-          ? { ...staffData, id: editingStaff.id, userId: user.id, createdAt: editingStaff.createdAt }
-          : s
-      );
-    } else {
-      const newStaff: Staff = {
-        ...staffData,
-        id: Date.now().toString(),
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-      };
-      updatedStaff = [...staff, newStaff];
+  const loadStaff = async () => {
+    try {
+      // Note: Staff API not implemented yet, this is a placeholder
+      console.log('🔄 Staff functionality not implemented in API yet');
+      setStaff([]); // Staff not implemented in API yet
+    } catch (error) {
+      console.error('❌ Error loading staff:', error);
+      alert('Failed to load staff data. Please check your connection and try again.');
     }
-
-    localStorage.setItem(`vyapaal_staff_${user.id}`, JSON.stringify(updatedStaff));
-    setStaff(updatedStaff);
-    setShowForm(false);
-    setEditingStaff(null);
   };
 
-  const handleDeleteStaff = (staffMember: Staff) => {
+  const handleSaveStaff = async (staffData: Omit<Staff, 'id' | 'userId' | 'createdAt'>) => {
+    try {
+      // Note: Staff API not implemented yet, this is a placeholder
+      console.log('🔄 Staff save functionality not implemented in API yet');
+      alert('Staff functionality is not available yet. Please use other sections for now.');
+      setShowForm(false);
+      setEditingStaff(null);
+    } catch (error) {
+      console.error('❌ Error saving staff:', error);
+      alert('Failed to save staff. Please try again.');
+    }
+  };
+
+  const handleDeleteStaff = async (staffMember: Staff) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
-      const updatedStaff = staff.filter(s => s.id !== staffMember.id);
-      localStorage.setItem(`vyapaal_staff_${user.id}`, JSON.stringify(updatedStaff));
-      setStaff(updatedStaff);
+      try {
+        // Note: Staff API not implemented yet, this is a placeholder
+        console.log('🔄 Staff delete functionality not implemented in API yet');
+        alert('Staff functionality is not available yet. Please use other sections for now.');
+      } catch (error) {
+        console.error('❌ Error deleting staff:', error);
+        alert('Failed to delete staff. Please try again.');
+      }
     }
   };
 

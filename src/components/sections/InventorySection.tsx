@@ -3,7 +3,8 @@ import { Plus, Search, Edit, Trash2, AlertTriangle, Download } from 'lucide-reac
 import { Inventory, User, Permission } from '../../types';
 import InventoryForm from '../forms/InventoryForm';
 import { exportToExcel, exportToPDF } from '../../utils/export';
-import { useDataUserId } from '../UserDataProvider';
+import { useDataUserId, useDataSource } from '../UserDataProvider';
+import apiService from '../../services/api';
 import { hasPermission } from '../../utils/businessUtils';
 
 interface InventorySectionProps {
@@ -13,65 +14,80 @@ interface InventorySectionProps {
 
 const InventorySection: React.FC<InventorySectionProps> = ({ user, userPermissions = [] }) => {
   const dataUserId = useDataUserId();
+  const { useApi } = useDataSource();
   const [inventory, setInventory] = useState<Inventory[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Inventory | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (dataUserId) {
-      loadInventory();
-    }
+    loadInventory();
   }, [dataUserId]);
 
-  const loadInventory = () => {
-    if (!dataUserId) return;
-    const storedInventory = JSON.parse(localStorage.getItem(`vyapaal_inventory_${dataUserId}`) || '[]');
-    setInventory(storedInventory);
-  };
-
-  const handleSaveInventory = (inventoryData: Omit<Inventory, 'id' | 'userId' | 'createdAt'>) => {
+  const loadInventory = async () => {
     if (!dataUserId) return;
 
-    let updatedInventory: Inventory[] = [];
-
-    if (editingItem) {
-      updatedInventory = inventory.map(item =>
-        item.id === editingItem.id
-          ? { ...inventoryData, id: editingItem.id, userId: dataUserId, createdAt: editingItem.createdAt }
-          : item
-      );
-    } else {
-      const newItem: Inventory = {
-        ...inventoryData,
-        id: Date.now().toString(),
-        userId: dataUserId,
-        createdAt: new Date().toISOString(),
-      };
-      updatedInventory = [...inventory, newItem];
+    setLoading(true);
+    try {
+      // Load from MongoDB API only
+      console.log('🔄 Loading inventory from MongoDB API...');
+      const inventoryData = await apiService.getInventory();
+      setInventory(inventoryData || []);
+      console.log('✅ Loaded inventory from API:', inventoryData?.length || 0);
+    } catch (error) {
+      console.error('❌ Error loading inventory:', error);
+      alert('Failed to load inventory. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
-
-    // Sort inventory by item and category for clean appearance
-    updatedInventory.sort((a, b) => {
-      if (a.item !== b.item) {
-        return a.item.localeCompare(b.item);
-      }
-      return a.category.localeCompare(b.category);
-    });
-
-    localStorage.setItem(`vyapaal_inventory_${dataUserId}`, JSON.stringify(updatedInventory));
-    setInventory(updatedInventory);
-    setShowForm(false);
-    setEditingItem(null);
   };
 
-  const handleDeleteInventory = (item: Inventory) => {
-    if (window.confirm('Are you sure you want to delete this inventory item?')) {
-      const updatedInventory = inventory.filter(i => i.id !== item.id);
-      if (dataUserId) {
-        localStorage.setItem(`vyapaal_inventory_${dataUserId}`, JSON.stringify(updatedInventory));
+  const handleSaveInventory = async (inventoryData: Omit<Inventory, 'id' | 'userId' | 'createdAt'>) => {
+    if (!dataUserId) return;
+
+    setLoading(true);
+    try {
+      // Save to MongoDB API only
+      let savedItem;
+      if (editingItem) {
+        console.log('🔄 Updating inventory item via API...');
+        savedItem = await apiService.updateInventory(editingItem.id, inventoryData);
+      } else {
+        console.log('🔄 Creating inventory item via API...');
+        savedItem = await apiService.createInventory(inventoryData);
       }
-      setInventory(updatedInventory);
+      console.log('✅ Inventory item saved via API:', savedItem);
+
+      // Reload inventory from API to get updated data
+      await loadInventory();
+      setShowForm(false);
+      setEditingItem(null);
+    } catch (error) {
+      console.error('❌ Error saving inventory:', error);
+      alert('Failed to save inventory item. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteInventory = async (item: Inventory) => {
+    if (window.confirm('Are you sure you want to delete this inventory item?')) {
+      setLoading(true);
+      try {
+        // Delete from MongoDB API only
+        console.log('🔄 Deleting inventory item via API...');
+        await apiService.deleteInventory(item.id);
+        console.log('✅ Inventory item deleted via API');
+
+        // Reload inventory from API to get updated data
+        await loadInventory();
+      } catch (error) {
+        console.error('❌ Error deleting inventory:', error);
+        alert('Failed to delete inventory item. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

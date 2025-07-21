@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, FileText, ShoppingCart, Package, Truck, Users } from 'lucide-react';
 import { Order, Rate, Inventory, Supplier, Staff, Customer, User } from '../../types';
+import apiService from '../../services/api';
 
 interface FindSectionProps {
   user: User;
@@ -30,15 +31,29 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
     loadAllData();
   }, [user.id]);
 
-  const loadAllData = () => {
-    const orders = JSON.parse(localStorage.getItem(`vyapaal_orders_${user.id}`) || '[]');
-    const rates = JSON.parse(localStorage.getItem(`vyapaal_rates_${user.id}`) || '[]');
-    const inventory = JSON.parse(localStorage.getItem(`vyapaal_inventory_${user.id}`) || '[]');
-    const suppliers = JSON.parse(localStorage.getItem(`vyapaal_suppliers_${user.id}`) || '[]');
-    const staff = JSON.parse(localStorage.getItem(`vyapaal_staff_${user.id}`) || '[]');
-    const customers = JSON.parse(localStorage.getItem(`vyapaal_customers_${user.id}`) || '[]');
+  const loadAllData = async () => {
+    try {
+      console.log('🔄 Loading all data from MongoDB API...');
+      const [orders, rates, inventory, customers] = await Promise.all([
+        apiService.getOrders(),
+        apiService.getRates(),
+        apiService.getInventory(),
+        apiService.getCustomers()
+      ]);
 
-    setAllData({ orders, rates, inventory, suppliers, staff, customers });
+      setAllData({
+        orders: orders || [],
+        rates: rates || [],
+        inventory: inventory || [],
+        suppliers: [], // Suppliers not implemented in API yet
+        staff: [], // Staff not implemented in API yet
+        customers: customers || []
+      });
+      console.log('✅ Loaded all data from API');
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
+      alert('Failed to load search data. Please check your connection and try again.');
+    }
   };
 
   const performSearch = (term: string) => {
@@ -59,7 +74,7 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
       if (order.customerPhone.includes(searchLower)) matches.push('Customer Phone');
       if (order.item.toLowerCase().includes(searchLower)) matches.push('Item');
       if (order.category.toLowerCase().includes(searchLower)) matches.push('Category');
-      
+
       if (matches.length > 0) {
         results.push({
           type: 'order',
@@ -75,7 +90,7 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
       if (rate.item.toLowerCase().includes(searchLower)) matches.push('Item');
       if (rate.category.toLowerCase().includes(searchLower)) matches.push('Category');
       if (rate.rate.toString().includes(searchLower)) matches.push('Rate');
-      
+
       if (matches.length > 0) {
         results.push({
           type: 'rate',
@@ -91,7 +106,7 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
       if (item.item.toLowerCase().includes(searchLower)) matches.push('Item');
       if (item.category.toLowerCase().includes(searchLower)) matches.push('Category');
       if (item.quantity.toString().includes(searchLower)) matches.push('Quantity');
-      
+
       if (matches.length > 0) {
         results.push({
           type: 'inventory',
@@ -108,7 +123,7 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
       if (supplier.billNo.toLowerCase().includes(searchLower)) matches.push('Bill No');
       if (supplier.item.toLowerCase().includes(searchLower)) matches.push('Item');
       if (supplier.category.toLowerCase().includes(searchLower)) matches.push('Category');
-      
+
       if (matches.length > 0) {
         results.push({
           type: 'supplier',
@@ -125,7 +140,7 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
       if (staffMember.staffName.toLowerCase().includes(searchLower)) matches.push('Staff Name');
       if (staffMember.phoneNo.includes(searchLower)) matches.push('Phone No');
       if (staffMember.role.toLowerCase().includes(searchLower)) matches.push('Role');
-      
+
       if (matches.length > 0) {
         results.push({
           type: 'staff',
@@ -140,7 +155,7 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
       const matches = [];
       if (customer.name.toLowerCase().includes(searchLower)) matches.push('Customer Name');
       if (customer.phone.includes(searchLower)) matches.push('Phone');
-      
+
       if (matches.length > 0) {
         results.push({
           type: 'customer',
@@ -292,14 +307,13 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          result.type === 'order' ? 'bg-blue-100 text-blue-800' :
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.type === 'order' ? 'bg-blue-100 text-blue-800' :
                           result.type === 'rate' ? 'bg-green-100 text-green-800' :
-                          result.type === 'inventory' ? 'bg-purple-100 text-purple-800' :
-                          result.type === 'supplier' ? 'bg-orange-100 text-orange-800' :
-                          result.type === 'staff' ? 'bg-indigo-100 text-indigo-800' :
-                          'bg-pink-100 text-pink-800'
-                        }`}>
+                            result.type === 'inventory' ? 'bg-purple-100 text-purple-800' :
+                              result.type === 'supplier' ? 'bg-orange-100 text-orange-800' :
+                                result.type === 'staff' ? 'bg-indigo-100 text-indigo-800' :
+                                  'bg-pink-100 text-pink-800'
+                          }`}>
                           {getTypeLabel(result.type)}
                         </span>
                         <span className="text-xs text-gray-500">

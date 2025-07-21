@@ -1,5 +1,7 @@
-// Force production API URL to fix deployment issues
-const API_BASE_URL = 'https://vyapaal.vercel.app/api';
+// Use local API in development, production API in production
+const API_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : 'https://vyapaal.vercel.app/api';
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -48,17 +50,15 @@ class ApiService {
   private token: string | null;
 
   constructor() {
-    this.token = localStorage.getItem('vyapaal_token');
+    this.token = null;
   }
 
   setToken(token: string): void {
     this.token = token;
-    localStorage.setItem('vyapaal_token', token);
   }
 
   removeToken(): void {
     this.token = null;
-    localStorage.removeItem('vyapaal_token');
   }
 
   async request<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
@@ -116,7 +116,7 @@ class ApiService {
         const data = JSON.parse(responseText);
         console.log(`✅ API Success: ${options.method || 'GET'} ${url}`, data);
         return data;
-      } catch (parseError) {
+      } catch {
         console.error('❌ Failed to parse JSON response:', responseText.substring(0, 200));
         throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}`);
       }

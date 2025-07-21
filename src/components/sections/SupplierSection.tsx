@@ -3,6 +3,7 @@ import { Plus, Search, Edit, Trash2, Download } from 'lucide-react';
 import { Supplier, User, Inventory } from '../../types';
 import SupplierForm from '../forms/SupplierForm';
 import { exportToExcel, exportToPDF } from '../../utils/export';
+import apiService from '../../services/api';
 
 interface SupplierSectionProps {
   user: User;
@@ -19,91 +20,49 @@ const SupplierSection: React.FC<SupplierSectionProps> = ({ user }) => {
     loadData();
   }, [user.id]);
 
-  const loadData = () => {
-    const storedSuppliers = JSON.parse(localStorage.getItem(`vyapaal_suppliers_${user.id}`) || '[]');
-    const storedInventory = JSON.parse(localStorage.getItem(`vyapaal_inventory_${user.id}`) || '[]');
-    setSuppliers(storedSuppliers);
-    setInventory(storedInventory);
+  const loadData = async () => {
+    try {
+      console.log('🔄 Loading suppliers and inventory from MongoDB API...');
+      const [suppliersData, inventoryData] = await Promise.all([
+        apiService.getCustomers(), // Using customers API as suppliers placeholder
+        apiService.getInventory()
+      ]);
+
+      setSuppliers([]); // Suppliers not implemented in API yet
+      setInventory(inventoryData || []);
+      console.log('✅ Loaded from API:', {
+        suppliers: 0, // Placeholder
+        inventory: inventoryData?.length || 0
+      });
+    } catch (error) {
+      console.error('❌ Error loading data:', error);
+      alert('Failed to load supplier data. Please check your connection and try again.');
+    }
   };
 
-  const handleSaveSupplier = (supplierData: Omit<Supplier, 'id' | 'userId' | 'createdAt'>) => {
-    let updatedSuppliers: Supplier[] = [];
-    let updatedInventory = [...inventory];
-
-    if (editingSupplier) {
-      // Editing existing supplier - restore previous inventory
-      const oldInventoryItem = updatedInventory.find(
-        item => item.item === editingSupplier.item && item.category === editingSupplier.category
-      );
-      if (oldInventoryItem) {
-        oldInventoryItem.quantity -= editingSupplier.quantity;
-      }
-
-      updatedSuppliers = suppliers.map(supplier =>
-        supplier.id === editingSupplier.id
-          ? { ...supplierData, id: editingSupplier.id, userId: user.id, createdAt: editingSupplier.createdAt }
-          : supplier
-      );
-    } else {
-      const newSupplier: Supplier = {
-        ...supplierData,
-        id: Date.now().toString(),
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-      };
-      updatedSuppliers = [...suppliers, newSupplier];
+  const handleSaveSupplier = async (supplierData: Omit<Supplier, 'id' | 'userId' | 'createdAt'>) => {
+    try {
+      // Note: Suppliers API not implemented yet, this is a placeholder
+      console.log('🔄 Supplier functionality not implemented in API yet');
+      alert('Supplier functionality is not available yet. Please use other sections for now.');
+      setShowForm(false);
+      setEditingSupplier(null);
+    } catch (error) {
+      console.error('❌ Error saving supplier:', error);
+      alert('Failed to save supplier. Please try again.');
     }
-
-    // Update inventory with new supplier data
-    const inventoryItem = updatedInventory.find(
-      item => item.item === supplierData.item && item.category === supplierData.category
-    );
-
-    if (inventoryItem) {
-      inventoryItem.quantity += supplierData.quantity;
-    } else {
-      // Create new inventory item if it doesn't exist
-      const newInventoryItem: Inventory = {
-        id: Date.now().toString(),
-        item: supplierData.item,
-        category: supplierData.category,
-        quantity: supplierData.quantity,
-        threshold: 5, // Default threshold
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-      };
-      updatedInventory.push(newInventoryItem);
-    }
-
-    // Save to localStorage
-    localStorage.setItem(`vyapaal_suppliers_${user.id}`, JSON.stringify(updatedSuppliers));
-    localStorage.setItem(`vyapaal_inventory_${user.id}`, JSON.stringify(updatedInventory));
-
-    setSuppliers(updatedSuppliers);
-    setInventory(updatedInventory);
-    setShowForm(false);
-    setEditingSupplier(null);
   };
 
-  const handleDeleteSupplier = (supplier: Supplier) => {
+  const handleDeleteSupplier = async (supplier: Supplier) => {
     if (window.confirm('Are you sure you want to delete this supplier record?')) {
-      const updatedSuppliers = suppliers.filter(s => s.id !== supplier.id);
-      
-      // Restore inventory
-      const updatedInventory = [...inventory];
-      const inventoryItem = updatedInventory.find(
-        item => item.item === supplier.item && item.category === supplier.category
-      );
-      if (inventoryItem) {
-        inventoryItem.quantity -= supplier.quantity;
-        if (inventoryItem.quantity < 0) inventoryItem.quantity = 0;
+      try {
+        // Note: Suppliers API not implemented yet, this is a placeholder
+        console.log('🔄 Supplier delete functionality not implemented in API yet');
+        alert('Supplier functionality is not available yet. Please use other sections for now.');
+      } catch (error) {
+        console.error('❌ Error deleting supplier:', error);
+        alert('Failed to delete supplier. Please try again.');
       }
-
-      localStorage.setItem(`vyapaal_suppliers_${user.id}`, JSON.stringify(updatedSuppliers));
-      localStorage.setItem(`vyapaal_inventory_${user.id}`, JSON.stringify(updatedInventory));
-      
-      setSuppliers(updatedSuppliers);
-      setInventory(updatedInventory);
     }
   };
 

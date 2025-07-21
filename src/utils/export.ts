@@ -34,7 +34,7 @@ export const exportToPDF = (data: any[], title: string, filename: string) => {
 
   const headers = Object.keys(data[0]);
   
-  let htmlContent = `
+  const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>

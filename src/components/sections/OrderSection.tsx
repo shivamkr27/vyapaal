@@ -14,7 +14,7 @@ interface OrderSectionProps {
 
 const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] }) => {
   const dataUserId = useDataUserId();
-  const { useApi, useLocalStorage } = useDataSource();
+  const { useApi } = useDataSource();
   const [orders, setOrders] = useState<Order[]>([]);
   const [rates, setRates] = useState<Rate[]>([]);
   const [inventory, setInventory] = useState<Inventory[]>([]);
@@ -26,49 +26,31 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
 
   useEffect(() => {
     loadData();
-  }, [useApi, useLocalStorage, dataUserId, selectedDate]);
+  }, [dataUserId, selectedDate]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      if (useApi) {
-        // Load data from MongoDB API
-        console.log('🔄 Loading data from MongoDB API...');
-        const [ordersData, ratesData, inventoryData] = await Promise.all([
-          apiService.getOrders(selectedDate),
-          apiService.getRates(),
-          apiService.getInventory()
-        ]);
+      // Load data from MongoDB API only
+      console.log('🔄 Loading data from MongoDB API...');
+      const [ordersData, ratesData, inventoryData] = await Promise.all([
+        apiService.getOrders(selectedDate),
+        apiService.getRates(),
+        apiService.getInventory()
+      ]);
 
-        setOrders(ordersData || []);
-        setRates(ratesData || []);
-        setInventory(inventoryData || []);
+      setOrders(ordersData || []);
+      setRates(ratesData || []);
+      setInventory(inventoryData || []);
 
-        console.log('✅ Loaded from API:', {
-          orders: ordersData?.length || 0,
-          rates: ratesData?.length || 0,
-          inventory: inventoryData?.length || 0
-        });
-      } else if (useLocalStorage && dataUserId) {
-        // Load data from localStorage (legacy)
-        console.log('🔄 Loading data from localStorage...');
-        const storedOrders = JSON.parse(localStorage.getItem(`vyapaal_orders_${dataUserId}`) || '[]');
-        const storedRates = JSON.parse(localStorage.getItem(`vyapaal_rates_${dataUserId}`) || '[]');
-        const storedInventory = JSON.parse(localStorage.getItem(`vyapaal_inventory_${dataUserId}`) || '[]');
-
-        setOrders(storedOrders);
-        setRates(storedRates);
-        setInventory(storedInventory);
-
-        console.log('✅ Loaded from localStorage:', storedOrders.length, 'orders');
-      }
+      console.log('✅ Loaded from API:', {
+        orders: ordersData?.length || 0,
+        rates: ratesData?.length || 0,
+        inventory: inventoryData?.length || 0
+      });
     } catch (error) {
       console.error('❌ Error loading data:', error);
-      // Fallback to localStorage if API fails
-      if (dataUserId) {
-        const storedOrders = JSON.parse(localStorage.getItem(`vyapaal_orders_${dataUserId}`) || '[]');
-        setOrders(storedOrders);
-      }
+      alert('Failed to load data. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -76,76 +58,14 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
 
   const handleSaveOrder = async (orderData: Omit<Order, 'id' | 'userId' | 'createdAt'>) => {
     try {
-      if (useApi) {
-        // Save to MongoDB API
-        if (editingOrder) {
-          await apiService.updateOrder(editingOrder.id, orderData);
-        } else {
-          await apiService.createOrder(orderData);
-        }
-        // Reload data after save
-        await loadData();
+      // Save to MongoDB API only
+      if (editingOrder) {
+        await apiService.updateOrder(editingOrder.id, orderData);
       } else {
-        // Save to localStorage (legacy)
-        let updatedOrders: Order[] = [];
-        let updatedInventory = [...inventory];
-
-        if (editingOrder) {
-          // Editing existing order - restore previous inventory
-          const oldInventoryItem = updatedInventory.find(
-            item => item.item === editingOrder.item && item.category === editingOrder.category
-          );
-          if (oldInventoryItem) {
-            oldInventoryItem.quantity += editingOrder.quantity;
-          }
-
-          // Update order
-          updatedOrders = orders.map(order =>
-            order.id === editingOrder.id
-              ? { ...orderData, id: editingOrder.id, userId: dataUserId || user.id, createdAt: editingOrder.createdAt }
-              : order
-          );
-        } else {
-          // Creating new order
-          const newOrder: Order = {
-            ...orderData,
-            id: Date.now().toString(),
-            userId: dataUserId || user.id,
-            createdAt: new Date().toISOString(),
-          };
-          updatedOrders = [...orders, newOrder];
-        }
-
-        // Update inventory for new/updated order
-        const inventoryItem = updatedInventory.find(
-          item => item.item === orderData.item && item.category === orderData.category
-        );
-
-        if (inventoryItem) {
-          if (inventoryItem.quantity >= orderData.quantity) {
-            inventoryItem.quantity -= orderData.quantity;
-          } else {
-            alert(`Insufficient inventory! Available: ${inventoryItem.quantity}, Required: ${orderData.quantity}`);
-            return;
-          }
-        } else {
-          alert('Item not found in inventory. Please add it to inventory first.');
-          return;
-        }
-
-        // Save to localStorage
-        if (dataUserId) {
-          localStorage.setItem(`vyapaal_orders_${dataUserId}`, JSON.stringify(updatedOrders));
-          localStorage.setItem(`vyapaal_inventory_${dataUserId}`, JSON.stringify(updatedInventory));
-        }
-
-        // Update customer records
-        updateCustomerRecord(orderData);
-
-        setOrders(updatedOrders);
-        setInventory(updatedInventory);
+        await apiService.createOrder(orderData);
       }
-
+      // Reload data after save
+      await loadData();
       setShowForm(false);
       setEditingOrder(null);
     } catch (error) {
@@ -154,62 +74,15 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
     }
   };
 
-  const updateCustomerRecord = (orderData: Omit<Order, 'id' | 'userId' | 'createdAt'>) => {
-    if (!dataUserId) return;
-
-    const customers = JSON.parse(localStorage.getItem(`vyapaal_customers_${dataUserId}`) || '[]');
-    let existingCustomer = customers.find((c: Customer) => c.phone === orderData.customerPhone);
-
-    // Calculate excess payment (credit)
-    const excessPayment = Math.max(0, orderData.paid - orderData.totalAmount);
-
-    if (!existingCustomer) {
-      const newCustomer: Customer = {
-        id: Date.now().toString(),
-        name: orderData.customerName,
-        phone: orderData.customerPhone,
-        userId: dataUserId,
-        createdAt: new Date().toISOString(),
-        creditBalance: excessPayment
-      };
-      customers.push(newCustomer);
-    } else {
-      // Update existing customer's credit balance
-      existingCustomer.creditBalance = (existingCustomer.creditBalance || 0) + excessPayment;
-    }
-
-    localStorage.setItem(`vyapaal_customers_${dataUserId}`, JSON.stringify(customers));
-  };
+  // Customer records are now handled by the API automatically
 
   const handleDeleteOrder = async (order: Order) => {
     if (window.confirm('Are you sure you want to delete this order?')) {
       try {
-        if (useApi) {
-          // Delete from MongoDB API
-          await apiService.deleteOrder(order.id);
-          // Reload data after delete
-          await loadData();
-        } else {
-          // Delete from localStorage (legacy)
-          const updatedOrders = orders.filter(o => o.id !== order.id);
-
-          // Restore inventory
-          const updatedInventory = [...inventory];
-          const inventoryItem = updatedInventory.find(
-            item => item.item === order.item && item.category === order.category
-          );
-          if (inventoryItem) {
-            inventoryItem.quantity += order.quantity;
-          }
-
-          if (dataUserId) {
-            localStorage.setItem(`vyapaal_orders_${dataUserId}`, JSON.stringify(updatedOrders));
-            localStorage.setItem(`vyapaal_inventory_${dataUserId}`, JSON.stringify(updatedInventory));
-          }
-
-          setOrders(updatedOrders);
-          setInventory(updatedInventory);
-        }
+        // Delete from MongoDB API only
+        await apiService.deleteOrder(order.id);
+        // Reload data after delete
+        await loadData();
       } catch (error) {
         console.error('Error deleting order:', error);
         alert('Failed to delete order. Please try again.');
@@ -221,37 +94,23 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
     try {
       const newStatus: 'pending' | 'delivered' = order.status === 'pending' ? 'delivered' : 'pending';
 
-      if (useApi) {
-        // Update status via MongoDB API
-        const updateData = {
-          customerName: order.customerName,
-          customerPhone: order.customerPhone,
-          item: order.item,
-          category: order.category,
-          quantity: order.quantity,
-          rate: order.rate,
-          totalAmount: order.totalAmount,
-          paid: order.paid,
-          due: order.due,
-          deliveryDate: order.deliveryDate,
-          status: newStatus
-        };
-        await apiService.updateOrder(order.id, updateData);
-        // Reload data after update
-        await loadData();
-      } else {
-        // Update status in localStorage (legacy)
-        const updatedOrders: Order[] = orders.map(o =>
-          o.id === order.id
-            ? { ...o, status: newStatus }
-            : o
-        );
-
-        if (dataUserId) {
-          localStorage.setItem(`vyapaal_orders_${dataUserId}`, JSON.stringify(updatedOrders));
-        }
-        setOrders(updatedOrders);
-      }
+      // Update status via MongoDB API only
+      const updateData = {
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        item: order.item,
+        category: order.category,
+        quantity: order.quantity,
+        rate: order.rate,
+        totalAmount: order.totalAmount,
+        paid: order.paid,
+        due: order.due,
+        deliveryDate: order.deliveryDate,
+        status: newStatus
+      };
+      await apiService.updateOrder(order.id, updateData);
+      // Reload data after update
+      await loadData();
     } catch (error) {
       console.error('Error updating order status:', error);
       alert('Failed to update order status. Please try again.');

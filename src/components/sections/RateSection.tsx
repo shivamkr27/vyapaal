@@ -3,7 +3,8 @@ import { Plus, Search, Edit, Trash2, ArrowUpDown, Download } from 'lucide-react'
 import { Rate, User, Permission } from '../../types';
 import RateForm from '../forms/RateForm';
 import { exportToExcel, exportToPDF } from '../../utils/export';
-import { useDataUserId } from '../UserDataProvider';
+import { useDataUserId, useDataSource } from '../UserDataProvider';
+import apiService from '../../services/api';
 import { hasPermission } from '../../utils/businessUtils';
 
 interface RateSectionProps {
@@ -18,61 +19,73 @@ const RateSection: React.FC<RateSectionProps> = ({ user, userPermissions = [] })
   const [editingRate, setEditingRate] = useState<Rate | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (dataUserId) {
-      loadRates();
-    }
+    loadRates();
   }, [dataUserId]);
 
-  const loadRates = () => {
-    if (!dataUserId) return;
-    const storedRates = JSON.parse(localStorage.getItem(`vyapaal_rates_${dataUserId}`) || '[]');
-    setRates(storedRates);
-  };
-
-  const handleSaveRate = (rateData: Omit<Rate, 'id' | 'userId' | 'createdAt'>) => {
+  const loadRates = async () => {
     if (!dataUserId) return;
 
-    let updatedRates: Rate[] = [];
-
-    if (editingRate) {
-      updatedRates = rates.map(rate =>
-        rate.id === editingRate.id
-          ? { ...rateData, id: editingRate.id, userId: dataUserId, createdAt: editingRate.createdAt }
-          : rate
-      );
-    } else {
-      const newRate: Rate = {
-        ...rateData,
-        id: Date.now().toString(),
-        userId: dataUserId,
-        createdAt: new Date().toISOString(),
-      };
-      updatedRates = [...rates, newRate];
+    setLoading(true);
+    try {
+      console.log('🔄 Loading rates from MongoDB API...');
+      const ratesData = await apiService.getRates();
+      setRates(ratesData || []);
+      console.log('✅ Loaded rates from API:', ratesData?.length || 0);
+    } catch (error) {
+      console.error('❌ Error loading rates:', error);
+      alert('Failed to load rates. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
-
-    // Sort rates by item and category for clean appearance
-    updatedRates.sort((a, b) => {
-      if (a.item !== b.item) {
-        return a.item.localeCompare(b.item);
-      }
-      return a.category.localeCompare(b.category);
-    });
-
-    localStorage.setItem(`vyapaal_rates_${dataUserId}`, JSON.stringify(updatedRates));
-    setRates(updatedRates);
-    setShowForm(false);
-    setEditingRate(null);
   };
 
-  const handleDeleteRate = (rate: Rate) => {
-    if (window.confirm('Are you sure you want to delete this rate?')) {
-      const updatedRates = rates.filter(r => r.id !== rate.id);
-      if (dataUserId) {
-        localStorage.setItem(`vyapaal_rates_${dataUserId}`, JSON.stringify(updatedRates));
+  const handleSaveRate = async (rateData: Omit<Rate, 'id' | 'userId' | 'createdAt'>) => {
+    if (!dataUserId) return;
+
+    setLoading(true);
+    try {
+      // Save to MongoDB API only
+      if (editingRate) {
+        console.log('🔄 Updating rate via API...');
+        await apiService.updateRate(editingRate.id, rateData);
+      } else {
+        console.log('🔄 Creating rate via API...');
+        await apiService.createRate(rateData);
       }
-      setRates(updatedRates);
+      console.log('✅ Rate saved via API');
+
+      // Reload rates from API to get updated data
+      await loadRates();
+      setShowForm(false);
+      setEditingRate(null);
+    } catch (error) {
+      console.error('❌ Error saving rate:', error);
+      alert('Failed to save rate. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRate = async (rate: Rate) => {
+    if (window.confirm('Are you sure you want to delete this rate?')) {
+      setLoading(true);
+      try {
+        // Delete from MongoDB API only
+        console.log('🔄 Deleting rate via API...');
+        await apiService.deleteRate(rate.id);
+        console.log('✅ Rate deleted via API');
+
+        // Reload rates from API to get updated data
+        await loadRates();
+      } catch (error) {
+        console.error('❌ Error deleting rate:', error);
+        alert('Failed to delete rate. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
