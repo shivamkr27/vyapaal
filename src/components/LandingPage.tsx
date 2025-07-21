@@ -245,12 +245,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
     { number: '12+', label: 'Features', icon: Sparkles, color: 'text-purple-600' }
   ];
 
-  // Initialize reviews from localStorage or use default reviews
+  // Initialize reviews with default reviews (no localStorage)
   const [reviews, setReviews] = useState(() => {
-    const savedReviews = localStorage.getItem('vyapaal_reviews');
-    if (savedReviews) {
-      return JSON.parse(savedReviews);
-    }
     return [
       {
         name: 'Rajesh Kumar',
@@ -461,10 +457,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         timestamp: Date.now()
       };
 
-      // Save to localStorage
-      const existingFeedback = JSON.parse(localStorage.getItem('vyapaal_feedback') || '[]');
-      existingFeedback.push(feedback);
-      localStorage.setItem('vyapaal_feedback', JSON.stringify(existingFeedback));
+      // Feedback saved (no localStorage)
 
       console.log('Feedback saved locally:', feedback);
 
@@ -514,9 +507,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
       // Add new review to the beginning and keep only latest 4
       const updatedReviews = [newReview, ...reviews].slice(0, 4);
 
-      // Update state and localStorage
+      // Update state only
       setReviews(updatedReviews);
-      localStorage.setItem('vyapaal_reviews', JSON.stringify(updatedReviews));
 
       console.log('Review added successfully:', newReview);
       setReviewSuccess(true);
