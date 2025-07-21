@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 // Global in-memory user storage (shared across requests)
 if (!global.users) {
@@ -10,7 +10,7 @@ const users = global.users;
 // JWT secret (use environment variable in production)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
