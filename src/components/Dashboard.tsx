@@ -64,11 +64,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   }>>([]);
 
   useEffect(() => {
-    // Set default preferences (no localStorage)
-    const savedTheme = 'light' as 'light' | 'dark';
-    const savedNotifications = false;
-    const savedLanguage = 'en';
-    const savedAlerts: any[] = [];
+    // Load user preferences
+    const savedTheme = localStorage.getItem(`vyapaal_theme_${user.id}`) as 'light' | 'dark' || 'light';
+    const savedNotifications = localStorage.getItem(`vyapaal_notifications_${user.id}`) === 'true';
+    const savedLanguage = localStorage.getItem(`vyapaal_language_${user.id}`) || 'en';
+    const savedAlerts = JSON.parse(localStorage.getItem(`vyapaal_alerts_${user.id}`) || '[]');
 
     setTheme(savedTheme);
     setNotifications(savedNotifications);
@@ -108,7 +108,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   }, [user.email]);
 
   const savePreferences = () => {
-    // Preferences saved in memory only
+    localStorage.setItem(`vyapaal_theme_${user.id}`, theme);
+    localStorage.setItem(`vyapaal_notifications_${user.id}`, notifications.toString());
+    localStorage.setItem(`vyapaal_language_${user.id}`, language);
     document.documentElement.classList.toggle('dark', theme === 'dark');
   };
 
@@ -122,10 +124,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     };
     const updatedAlerts = [newAlert, ...alerts].slice(0, 50); // Keep only last 50 alerts
     setAlerts(updatedAlerts);
+    localStorage.setItem(`vyapaal_alerts_${user.id}`, JSON.stringify(updatedAlerts));
   };
 
   const clearAlerts = () => {
     setAlerts([]);
+    localStorage.setItem(`vyapaal_alerts_${user.id}`, '[]');
   };
 
   // Filter menu items based on user permissions

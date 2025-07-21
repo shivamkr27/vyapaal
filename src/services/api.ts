@@ -50,19 +50,22 @@ class ApiService {
   private token: string | null;
 
   constructor() {
-    this.token = null;
+    // Try to get token from localStorage on initialization
+    this.token = localStorage.getItem('vyapaal_auth_token');
   }
 
   setToken(token: string): void {
     this.token = token;
+    localStorage.setItem('vyapaal_auth_token', token);
   }
 
   removeToken(): void {
     this.token = null;
+    localStorage.removeItem('vyapaal_auth_token');
   }
 
   getToken(): string | null {
-    return this.token;
+    return this.token || localStorage.getItem('vyapaal_auth_token');
   }
 
   async request<T = any>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {

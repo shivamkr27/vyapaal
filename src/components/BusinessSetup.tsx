@@ -86,7 +86,14 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
         businessName: business.businessName
       };
 
-      // User updated in memory only
+      // Save updated user
+      const users = JSON.parse(localStorage.getItem('vyapaal_users') || '[]');
+      const userIndex = users.findIndex((u: User) => u.id === user.id);
+      if (userIndex >= 0) {
+        users[userIndex] = updatedUser;
+        localStorage.setItem('vyapaal_users', JSON.stringify(users));
+      }
+
       setBusinessCreated(business);
 
     } catch (error) {
@@ -126,7 +133,14 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
         businessName: business.businessName
       };
 
-      // User updated in memory only
+      // Save updated user
+      const users = JSON.parse(localStorage.getItem('vyapaal_users') || '[]');
+      const userIndex = users.findIndex((u: User) => u.id === user.id);
+      if (userIndex >= 0) {
+        users[userIndex] = updatedUser;
+        localStorage.setItem('vyapaal_users', JSON.stringify(users));
+      }
+
       onComplete(updatedUser);
 
     } catch (error) {
