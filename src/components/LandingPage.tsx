@@ -38,7 +38,7 @@ import {
 import { User as UserType } from '../types';
 
 interface LandingPageProps {
-  onLogin: (user: UserType, isNewRegistration?: boolean) => void;
+  onLogin: (user: UserType, token: string, isNewRegistration?: boolean) => void;
 }
 
 interface Review {
@@ -160,8 +160,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           id: response.user?.id || '',
           email: response.user?.email || '',
           name: response.user?.name || '',
-          createdAt: response.user?.createdAt || ''
-        }, false); // false = existing user login
+          createdAt: response.user?.createdAt || '',
+          business: response.user?.business,
+          preferences: response.user?.preferences,
+          alerts: response.user?.alerts
+        }, response.token || '', false); // false = existing user login
       } else {
         // Register using API
         const response = await apiService.register({
@@ -174,8 +177,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           id: response.user?.id || '',
           email: response.user?.email || '',
           name: response.user?.name || '',
-          createdAt: response.user?.createdAt || ''
-        }, true); // true = new user registration
+          createdAt: response.user?.createdAt || '',
+          business: response.user?.business,
+          preferences: response.user?.preferences,
+          alerts: response.user?.alerts
+        }, response.token || '', true); // true = new user registration
       }
     } catch (error: any) {
       setErrors({ submit: error.message || 'An error occurred. Please try again.' });

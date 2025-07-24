@@ -1,7 +1,19 @@
-// Use local API in development, production API in production
-const API_BASE_URL = import.meta.env.DEV
-  ? '/api'
-  : 'https://vyapaal.vercel.app/api';
+// Dynamic API URL based on environment
+const API_BASE_URL = (() => {
+  // In production (deployed), use the same domain
+  if (import.meta.env.PROD) {
+    return '/api';
+  }
+
+  // In development, use localhost with port detection
+  let port = 5000;
+  const storedPort = sessionStorage.getItem('apiPort');
+  if (storedPort) {
+    port = parseInt(storedPort, 10);
+  }
+
+  return `http://localhost:${port}/api`;
+})();
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -26,6 +38,14 @@ interface RegisterData {
   password: string;
 }
 
+interface OrderItem {
+  item: string;
+  category: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
 interface OrderData {
   customerName: string;
   customerPhone: string;
@@ -37,6 +57,7 @@ interface OrderData {
   paid: number;
   due: number;
   deliveryDate: string;
+  items?: OrderItem[]; // For multiple items in an order
 }
 
 // Custom request options interface
@@ -85,10 +106,13 @@ class ApiService {
       ...options.headers,
     };
 
+    console.log(`API Request: ${options.method || 'GET'} ${url} with token: ${this.token ? 'present' : 'missing'}`);
+
     const config: RequestInit = {
       method: options.method || 'GET',
       headers,
       body,
+      credentials: 'include', // Include cookies in the request
     };
 
     try {
@@ -233,6 +257,64 @@ class ApiService {
     });
   }
 
+  // Supplier methods
+  async getSuppliers(): Promise<any[]> {
+    return this.request('/suppliers');
+  }
+
+  async createSupplier(supplierData: any): Promise<any> {
+    return this.request('/suppliers', {
+      method: 'POST',
+      body: supplierData,
+    });
+  }
+
+  async updateSupplier(id: string, supplierData: any): Promise<any> {
+    return this.request(`/suppliers/${id}`, {
+      method: 'PUT',
+      body: supplierData,
+    });
+  }
+
+  async deleteSupplier(id: string): Promise<any> {
+    return this.request(`/suppliers/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Staff methods
+  async getStaff(): Promise<any[]> {
+    return this.request('/staff');
+  }
+
+  async createStaff(staffData: any): Promise<any> {
+    return this.request('/staff', {
+      method: 'POST',
+      body: staffData,
+    });
+  }
+
+  async updateStaff(id: string, staffData: any): Promise<any> {
+    console.log('API updateStaff called with ID:', id, 'Data:', staffData);
+    return this.request(`/staff/${id}`, {
+      method: 'PUT',
+      body: staffData,
+    });
+  }
+
+  async deleteStaff(id: string): Promise<any> {
+    return this.request(`/staff/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async assignStaffRole(id: string, roleData: { role: string; roleCode: string; permissions: any[] }): Promise<any> {
+    return this.request(`/staff/${id}/role`, {
+      method: 'PUT',
+      body: roleData,
+    });
+  }
+
   // Customers methods
   async getCustomers(): Promise<any[]> {
     return this.request('/customers');
@@ -271,12 +353,103 @@ class ApiService {
     });
   }
 
+  // Join business
+  async joinBusiness(joinData: { businessCode: string; roleCode: string; phone: string }): Promise<any> {
+    return this.request('/business/join', {
+      method: 'POST',
+      body: joinData,
+    });
+  }
+
+  // Get business details including staff and roles
+  async getBusinessDetails(): Promise<any> {
+    return this.request('/business/details');
+  }
+
+  // Create or update role
+  async createOrUpdateRole(roleData: {
+    id?: string;
+    roleName: string;
+    permissions: Array<{
+      module: string;
+      actions: string[];
+    }>
+  }): Promise<any> {
+    return this.request('/business/roles', {
+      method: 'POST',
+      body: roleData,
+    });
+  }
+
+  // Delete role
+  async deleteRole(roleId: string): Promise<any> {
+    return this.request(`/business/roles/${roleId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Add staff member
+  async addStaffMember(staffData: {
+    name: string;
+    email: string;
+    phone: string;
+    role: string;
+    salary?: number;
+  }): Promise<any> {
+    return this.request('/business/staff', {
+      method: 'POST',
+      body: staffData,
+    });
+  }
+
+  // Update staff role
+  async updateStaffRole(staffId: string, role: string): Promise<any> {
+    return this.request(`/business/staff/${staffId}/role`, {
+      method: 'PUT',
+      body: { role },
+    });
+  }
+
+  // Update staff member (role, salary, etc.)
+  async updateStaffMember(staffId: string, updateData: {
+    role?: string;
+    salary?: number;
+    name?: string;
+    phone?: string;
+  }): Promise<any> {
+    console.log('API: Updating staff member', staffId, updateData);
+    return this.request(`/business/staff/${staffId}`, {
+      method: 'PUT',
+      body: updateData,
+    });
+  }
+
+  // Update staff salary
+  async updateStaffSalary(staffId: string, salary: number): Promise<any> {
+    return this.request(`/business/staff/${staffId}/salary`, {
+      method: 'PUT',
+      body: { salary },
+    });
+  }
+
+  // Remove staff member
+  async removeStaffMember(staffId: string): Promise<any> {
+    return this.request(`/business/staff/${staffId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // User preferences
   async updatePreferences(preferences: { theme: string; notifications: boolean; language: string }): Promise<any> {
     return this.request('/auth/preferences', {
       method: 'PUT',
       body: preferences,
     });
+  }
+
+  // Verify token and get current user
+  async verifyToken(): Promise<ApiResponse> {
+    return this.request('/auth/verify');
   }
 
   // Alerts

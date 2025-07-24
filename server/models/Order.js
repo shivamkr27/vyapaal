@@ -1,6 +1,20 @@
 import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
+  orderId: {
+    type: String,
+    unique: true,
+    required: true,
+    default: function () {
+      // Generate a unique order ID with format: ORD-YYYYMMDD-XXXX (X = random alphanumeric)
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return `ORD-${year}${month}${day}-${random}`;
+    }
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

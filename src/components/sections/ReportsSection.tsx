@@ -85,7 +85,11 @@ const ReportsSection: React.FC<ReportsSectionProps> = ({ user }) => {
     // Calculate monthly statistics
     const totalRevenue = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
     const totalPaid = filteredOrders.reduce((sum, order) => sum + order.paid, 0);
-    const totalDue = filteredOrders.reduce((sum, order) => sum + order.due, 0);
+
+    // Calculate total due as the difference between total revenue and total paid
+    // This ensures we're showing the actual net due amount
+    const totalDue = totalRevenue - totalPaid;
+
     const totalQuantity = filteredOrders.reduce((sum, order) => sum + order.quantity, 0);
     const uniqueCustomers = new Set(filteredOrders.map(order => order.customerPhone)).size;
     const averageOrderValue = filteredOrders.length > 0 ? totalRevenue / filteredOrders.length : 0;

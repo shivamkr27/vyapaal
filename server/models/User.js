@@ -22,7 +22,12 @@ const userSchema = new mongoose.Schema({
     id: String,
     businessName: String,
     businessCode: String,
-    isBusinessOwner: { type: Boolean, default: false }
+    isBusinessOwner: { type: Boolean, default: false },
+    role: { type: String, default: '' },
+    permissions: [{
+      module: { type: String, enum: ['dashboard', 'orders', 'inventory', 'staff', 'rates', 'suppliers', 'customers'] },
+      actions: [{ type: String, enum: ['read', 'create', 'update', 'delete'] }]
+    }]
   },
   preferences: {
     theme: { type: String, default: 'light' },

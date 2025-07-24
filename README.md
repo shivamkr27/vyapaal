@@ -67,31 +67,6 @@ A comprehensive business management system built with React, TypeScript, Node.js
    npm run dev
    ```
 
-## 🌐 Deployment
-
-### Vercel Deployment
-
-1. **Push to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy to Vercel**
-   - Connect your GitHub repository to Vercel
-   - Set environment variables in Vercel dashboard
-   - Deploy automatically
-
-### Environment Variables for Production
-
-```env
-MONGODB_URI=your_mongodb_atlas_connection_string
-JWT_SECRET=your_strong_jwt_secret
-NODE_ENV=production
-REACT_APP_API_URL=your_deployed_backend_url
-```
-
 ## 📱 Usage
 
 1. **Register/Login**: Create an account or login with existing credentials

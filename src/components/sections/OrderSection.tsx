@@ -59,9 +59,11 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
   const handleSaveOrder = async (orderData: Omit<Order, 'id' | 'userId' | 'createdAt'>) => {
     try {
       // Save to MongoDB API only
-      if (editingOrder) {
+      if (editingOrder && editingOrder.id) {
+        // When editing, update the existing order
         await apiService.updateOrder(editingOrder.id, orderData);
       } else {
+        // When creating new, create a new order
         await apiService.createOrder(orderData);
       }
       // Reload data after save
@@ -80,6 +82,10 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
     if (window.confirm('Are you sure you want to delete this order?')) {
       try {
         // Delete from MongoDB API only
+        if (!order.id) {
+          console.error('Cannot delete order: order.id is undefined');
+          return;
+        }
         await apiService.deleteOrder(order.id);
         // Reload data after delete
         await loadData();
@@ -108,6 +114,10 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
         deliveryDate: order.deliveryDate,
         status: newStatus
       };
+      if (!order.id) {
+        console.error('Cannot update order: order.id is undefined');
+        return;
+      }
       await apiService.updateOrder(order.id, updateData);
       // Reload data after update
       await loadData();
@@ -118,20 +128,54 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
   };
 
   const filteredOrders = orders.filter(order => {
+    // Skip orders with missing required fields
+    if (!order || !order.createdAt) return false;
+
     const orderDate = new Date(order.createdAt).toISOString().split('T')[0];
     const matchesDate = orderDate === selectedDate;
+
     const matchesSearch = searchTerm === '' ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerPhone.includes(searchTerm) ||
-      order.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.category.toLowerCase().includes(searchTerm.toLowerCase());
+      (order.customerName && order.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (order.customerPhone && order.customerPhone.includes(searchTerm)) ||
+      (order.item && order.item.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (order.category && order.category.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return matchesDate && matchesSearch;
   });
 
+  // Group orders by customer to show multiple items
+  const groupedOrders = filteredOrders.reduce((acc, order) => {
+    const key = `${order.customerName}-${order.customerPhone}`;
+    if (!acc[key]) {
+      acc[key] = {
+        customer: {
+          name: order.customerName,
+          phone: order.customerPhone
+        },
+        orders: [],
+        totalAmount: 0,
+        totalPaid: 0,
+        totalDue: 0
+      };
+    }
+    acc[key].orders.push(order);
+    acc[key].totalAmount += order.totalAmount;
+    acc[key].totalPaid += order.paid;
+    acc[key].totalDue += order.due;
+    return acc;
+  }, {} as Record<string, {
+    customer: { name: string; phone: string };
+    orders: Order[];
+    totalAmount: number;
+    totalPaid: number;
+    totalDue: number;
+  }>);
+
+  const groupedOrdersArray = Object.values(groupedOrders);
+
   const handleExport = (type: 'excel' | 'pdf') => {
     const exportData = filteredOrders.map(order => ({
-      'Order ID': order.id,
+      'Order ID': order.id || 'N/A',
       'Customer Name': order.customerName,
       'Customer Phone': order.customerPhone,
       'Item': order.item,
@@ -242,7 +286,7 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
               </tr>
             </thead>
             <tbody className="bg-white/60 backdrop-blur-sm divide-y divide-amber-200/30">
-              {filteredOrders.length === 0 ? (
+              {groupedOrdersArray.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-8 py-12 text-center text-gray-500">
                     <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
@@ -254,81 +298,126 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-white/80 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700">
-                      #{order.id.slice(-6)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-800">{order.customerName}</div>
-                        <div className="text-sm text-gray-600">{order.customerPhone}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-800">{order.item}</div>
-                        <div className="text-sm text-gray-600">{order.category}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{order.quantity}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">₹{order.rate.toLocaleString('en-IN')}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">₹{order.totalAmount.toLocaleString('en-IN')}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600">₹{order.paid.toLocaleString('en-IN')}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">₹{order.due.toLocaleString('en-IN')}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => handleStatusToggle(order)}
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-elegant ${order.status === 'delivered'
-                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                          : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                          }`}
-                      >
-                        {order.status === 'delivered' ? (
+                groupedOrdersArray.map((group, groupIndex) => (
+                  <React.Fragment key={`group-${groupIndex}`}>
+                    {group.orders.map((order, orderIndex) => (
+                      <tr key={order.id || `order-${Math.random()}`} className={`hover:bg-white/80 transition-colors ${orderIndex === 0 ? 'border-t-4 border-amber-400 bg-amber-50/30' : 'border-t border-amber-100'}`}>
+                        {orderIndex === 0 && (
                           <>
-                            <Check className="w-3 h-3 mr-1" />
-                            Delivered
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="w-3 h-3 mr-1" />
-                            Pending
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700" rowSpan={group.orders.length}>
+                              Multiple Items
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap" rowSpan={group.orders.length}>
+                              <div>
+                                <div className="text-sm font-semibold text-gray-800">{group.customer.name}</div>
+                                <div className="text-sm text-gray-600">{group.customer.phone}</div>
+                                <div className="text-xs text-blue-600 mt-1">{group.orders.length} items</div>
+                              </div>
+                            </td>
                           </>
                         )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                      {new Date(order.deliveryDate).toLocaleDateString('en-IN')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-3">
-                        {hasPermission(userPermissions, 'orders', 'update') && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-semibold text-gray-800">{order.item}</div>
+                            <div className="text-sm text-gray-600">{order.category}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{order.quantity}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">₹{order.rate.toLocaleString('en-IN')}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">₹{order.totalAmount.toLocaleString('en-IN')}</td>
+                        {orderIndex === 0 && (
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600" rowSpan={group.orders.length}>
+                              ₹{group.totalPaid.toLocaleString('en-IN')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600" rowSpan={group.orders.length}>
+                              ₹{group.totalDue.toLocaleString('en-IN')}
+                            </td>
+                          </>
+                        )}
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <button
-                            onClick={() => {
-                              setEditingOrder(order);
-                              setShowForm(true);
-                            }}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-elegant"
-                            title="Edit Order"
+                            onClick={() => handleStatusToggle(order)}
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-elegant ${order.status === 'delivered'
+                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                              : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                              }`}
                           >
-                            <Edit className="h-4 w-4" />
+                            {order.status === 'delivered' ? (
+                              <>
+                                <Check className="w-3 h-3 mr-1" />
+                                Delivered
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending
+                              </>
+                            )}
                           </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                          {new Date(order.deliveryDate).toLocaleDateString('en-IN')}
+                        </td>
+                        {orderIndex === 0 && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" rowSpan={group.orders.length}>
+                            <div className="flex items-center space-x-3">
+                              {hasPermission(userPermissions, 'orders', 'update') && (
+                                <button
+                                  onClick={() => {
+                                    // Create a combined order for editing multiple items
+                                    const combinedOrder = {
+                                      ...group.orders[0],
+                                      items: group.orders.map(o => ({
+                                        item: o.item,
+                                        category: o.category,
+                                        quantity: o.quantity,
+                                        rate: o.rate,
+                                        amount: o.totalAmount
+                                      })),
+                                      totalAmount: group.totalAmount,
+                                      paid: group.totalPaid,
+                                      due: group.totalDue
+                                    };
+                                    setEditingOrder(combinedOrder);
+                                    setShowForm(true);
+                                  }}
+                                  className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-elegant"
+                                  title="Edit All Items"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                              )}
+                              {hasPermission(userPermissions, 'orders', 'delete') && (
+                                <button
+                                  onClick={() => {
+                                    if (window.confirm(`Are you sure you want to delete all ${group.orders.length} items for ${group.customer.name}?`)) {
+                                      // Delete all orders for this customer
+                                      Promise.all(group.orders.map(order =>
+                                        order.id ? apiService.deleteOrder(order.id) : Promise.resolve()
+                                      )).then(() => {
+                                        loadData();
+                                      }).catch(error => {
+                                        console.error('Error deleting orders:', error);
+                                        alert('Failed to delete some orders. Please try again.');
+                                      });
+                                    }
+                                  }}
+                                  className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-elegant"
+                                  title="Delete All Items"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                              {!hasPermission(userPermissions, 'orders', 'update') && !hasPermission(userPermissions, 'orders', 'delete') && (
+                                <span className="text-gray-400 text-xs">View Only</span>
+                              )}
+                            </div>
+                          </td>
                         )}
-                        {hasPermission(userPermissions, 'orders', 'delete') && (
-                          <button
-                            onClick={() => handleDeleteOrder(order)}
-                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-elegant"
-                            title="Delete Order"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                        {!hasPermission(userPermissions, 'orders', 'update') && !hasPermission(userPermissions, 'orders', 'delete') && (
-                          <span className="text-gray-400 text-xs">View Only</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))
               )}
             </tbody>

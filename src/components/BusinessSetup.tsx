@@ -11,7 +11,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { User, Business } from '../types';
-import { createBusiness, joinBusinessWithRoleCode, saveBusiness } from '../utils/businessUtils';
+import apiService from '../services/api';
 
 interface BusinessSetupProps {
   user: User;
@@ -73,21 +73,34 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
     setIsLoading(true);
 
     try {
-      // Create new business
-      const business = createBusiness(formData.businessName, user.email, user.id);
-      saveBusiness(business);
+      // Generate a random 6-character business code
+      const businessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
       // Update business in database
       const response = await apiService.updateBusiness({
-        businessName: business.businessName,
-        businessCode: business.businessCode,
+        businessName: formData.businessName,
+        businessCode: businessCode,
         isBusinessOwner: true
       });
 
       setUpdatedUser(response.user);
+
+      // Create a business object for the UI
+      const business = {
+        id: response.user.business?.id || '',
+        businessCode: businessCode,
+        businessName: formData.businessName,
+        ownerEmail: user.email,
+        ownerId: user.id,
+        createdAt: new Date().toISOString(),
+        staff: [],
+        roles: []
+      };
+
       setBusinessCreated(business);
 
     } catch (error) {
+      console.error('Business creation error:', error);
       setErrors({ submit: 'Failed to create business. Please try again.' });
     } finally {
       setIsLoading(false);
@@ -100,31 +113,29 @@ const BusinessSetup: React.FC<BusinessSetupProps> = ({ user, onComplete, onLogou
     setIsLoading(true);
 
     try {
-      // Join business using role code
-      const result = joinBusinessWithRoleCode(formData.roleCode.toUpperCase(), {
-        name: user.name,
-        email: user.email,
-        phone: formData.phone
-      });
-
-      if (!result) {
-        setErrors({ roleCode: 'Invalid role code or you are already part of this business' });
+      // Extract business code from role code (assuming format: BIZCODE-ROLEXXXX)
+      const roleCodeParts = formData.roleCode.toUpperCase().split('-');
+      if (roleCodeParts.length !== 2) {
+        setErrors({ roleCode: 'Invalid role code format' });
         setIsLoading(false);
         return;
       }
 
-      const { business, role, staffId } = result;
+      const businessCode = roleCodeParts[0];
+      const roleCode = formData.roleCode.toUpperCase();
 
-      // Update business in database
-      const response = await apiService.updateBusiness({
-        businessName: formData.businessName,
-        businessCode: formData.businessCode,
-        isBusinessOwner: false
+      // Join business using API
+      const response = await apiService.joinBusiness({
+        businessCode: businessCode,
+        roleCode: roleCode,
+        phone: formData.phone
       });
 
+      // Complete the setup with the updated user data
       onComplete(response.user);
 
     } catch (error) {
+      console.error('Join business error:', error);
       setErrors({ submit: 'Failed to join business. Please try again.' });
     } finally {
       setIsLoading(false);

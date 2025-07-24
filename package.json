@@ -8,15 +8,14 @@
     "server": "cd server && node server.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "vite build",
+    "vercel-build": "vite build",
+    "start": "node server/server.js",
+    "test-deployment": "node test-deployment.js",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "cd server && node server.js",
-    "build:server": "echo 'Server build complete'",
-    "postbuild": "echo 'Build completed successfully'"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
-    "@vercel/speed-insights": "^1.2.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",

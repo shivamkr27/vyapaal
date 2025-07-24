@@ -1,10 +1,8 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { User } from '../types';
-import { getDataUserId } from '../utils/businessUtils';
 
 interface UserDataContextType {
   user: User;
-  dataUserId: string | null;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -15,12 +13,9 @@ interface UserDataProviderProps {
 }
 
 export const UserDataProvider: React.FC<UserDataProviderProps> = ({ user, children }) => {
-  const dataUserId = useMemo(() => getDataUserId(user.email), [user.email]);
-
   const contextValue = useMemo(() => ({
-    user,
-    dataUserId
-  }), [user, dataUserId]);
+    user
+  }), [user]);
 
   return (
     <UserDataContext.Provider value={contextValue}>
@@ -37,10 +32,10 @@ export const useUserData = () => {
   return context;
 };
 
-// Helper hook to get the correct user ID for localStorage operations
+// Helper hook to get the user ID directly from the user object
 export const useDataUserId = () => {
-  const { dataUserId } = useUserData();
-  return dataUserId;
+  const { user } = useUserData();
+  return user.id;
 };
 
 // Helper hook - always use API only

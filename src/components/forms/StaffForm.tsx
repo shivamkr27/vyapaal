@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Staff, User } from '../../types';
+import apiService from '../../services/api';
 
 interface StaffFormProps {
   user: User;
@@ -13,6 +14,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ user, staff, onSave, onCancel }) 
   const [formData, setFormData] = useState({
     staffId: '',
     staffName: '',
+    email: '',
     phoneNo: '',
     role: '',
     joiningDate: new Date().toISOString().split('T')[0],
@@ -26,10 +28,11 @@ const StaffForm: React.FC<StaffFormProps> = ({ user, staff, onSave, onCancel }) 
       setFormData({
         staffId: staff.staffId,
         staffName: staff.staffName,
+        email: staff.email || '',
         phoneNo: staff.phoneNo,
         role: staff.role,
         joiningDate: staff.joiningDate,
-        salary: staff.salary,
+        salary: staff.salary || 0, // Ensure salary is never undefined
       });
     }
   }, [staff]);
@@ -38,7 +41,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ user, staff, onSave, onCancel }) 
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'salary' ? parseFloat(value) || 0 : value
+      [name]: name === 'salary' ? (value === '' ? 0 : Number(value) || 0) : value
     }));
 
     if (errors[name]) {
@@ -52,8 +55,17 @@ const StaffForm: React.FC<StaffFormProps> = ({ user, staff, onSave, onCancel }) 
     if (!formData.staffId.trim()) newErrors.staffId = 'Staff ID is required';
     if (!formData.staffName.trim()) newErrors.staffName = 'Staff name is required';
     if (!formData.phoneNo.trim()) newErrors.phoneNo = 'Phone number is required';
-    if (!formData.role.trim()) newErrors.role = 'Role is required';
-    if (formData.salary <= 0) newErrors.salary = 'Salary must be greater than 0';
+
+    // Email validation (optional but must be valid if provided)
+    if (formData.email && formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+
+    // Role is now optional - can be assigned later in Team Management
+    if (formData.salary < 0) newErrors.salary = 'Salary cannot be negative';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -62,22 +74,69 @@ const StaffForm: React.FC<StaffFormProps> = ({ user, staff, onSave, onCancel }) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSave(formData);
+      console.log('StaffForm submitting data:', formData);
+
+      // Ensure joiningDate is in the correct format
+      const processedData = {
+        ...formData,
+        joiningDate: new Date(formData.joiningDate).toISOString(),
+        salary: Number(formData.salary) || 0
+      };
+
+      console.log('Processed data:', processedData);
+      onSave(processedData);
     }
   };
 
-  const commonRoles = [
-    'Manager',
-    'Assistant Manager',
-    'Sales Executive',
-    'Accountant',
-    'Store Keeper',
-    'Delivery Boy',
-    'Helper',
-    'Security Guard',
-    'Cleaner',
-    'Other'
-  ];
+  // Get roles from user's business
+  const [businessRoles, setBusinessRoles] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBusinessRoles = async () => {
+      try {
+        setLoading(true);
+        setApiError(null);
+
+        // Default roles to use if API fails or no business
+        const defaultRoles = ['Manager', 'Staff', 'Admin', 'Accountant', 'Delivery'];
+
+        // Check if user has a business
+        if (!user.business) {
+          console.log('No business found, using default roles');
+          setBusinessRoles(defaultRoles);
+          setLoading(false);
+          return;
+        }
+
+        try {
+          console.log('Fetching business roles...');
+          const response = await apiService.getBusinessDetails();
+
+          if (response && response.business && response.business.roles && response.business.roles.length > 0) {
+            console.log('Business roles found:', response.business.roles.length);
+            const roleNames = response.business.roles.map((role: any) => role.roleName);
+            setBusinessRoles(roleNames);
+          } else {
+            console.log('No roles found in business, using default roles');
+            setBusinessRoles(defaultRoles);
+          }
+        } catch (apiError: any) {
+          console.error('Failed to fetch business roles:', apiError);
+          setApiError('Failed to load roles. Using default roles.');
+          setBusinessRoles(defaultRoles);
+        }
+      } catch (error) {
+        console.error('Error in business roles fetch:', error);
+        setBusinessRoles(['Manager', 'Staff', 'Admin']);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBusinessRoles();
+  }, [user.business]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -127,6 +186,21 @@ const StaffForm: React.FC<StaffFormProps> = ({ user, staff, onSave, onCancel }) 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter email address"
+            />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone Number
             </label>
             <input
@@ -151,9 +225,16 @@ const StaffForm: React.FC<StaffFormProps> = ({ user, staff, onSave, onCancel }) 
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select role</option>
-              {commonRoles.map(role => (
-                <option key={role} value={role}>{role}</option>
-              ))}
+              {loading ? (
+                <option value="" disabled>Loading roles...</option>
+              ) : businessRoles.length > 0 ? (
+                businessRoles.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))
+              ) : (
+                <option value="" disabled>No roles available</option>
+              )}
+              {apiError && <option value="" disabled>Error: {apiError}</option>}
             </select>
             {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role}</p>}
           </div>

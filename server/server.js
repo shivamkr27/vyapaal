@@ -10,7 +10,10 @@ import authRoutes from './routes/auth.js';
 import orderRoutes from './routes/orders.js';
 import rateRoutes from './routes/rates.js';
 import inventoryRoutes from './routes/inventory.js';
+import supplierRoutes from './routes/suppliers.js';
+import staffRoutes from './routes/staff.js';
 import customerRoutes from './routes/customers.js';
+import businessRoutes from './routes/business.js';
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -25,8 +28,31 @@ const app = express();
 connectDB();
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  // Add your Vercel domain here when you get it
+  // 'https://your-app-name.vercel.app'
+];
+
+// In production, allow the same domain
+if (process.env.NODE_ENV === 'production') {
+  allowedOrigins.push(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+}
+
 app.use(cors({
-  origin: ['https://vyapaal.vercel.app', 'http://localhost:3000', 'http://localhost:5173', 'http://localhost:5175'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'production') {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -37,14 +63,30 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/rates', rateRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/api/staff', staffRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/business', businessRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
     message: 'Server is running',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    mongodb: process.env.MONGODB_URI ? 'Connected' : 'Not configured',
+    jwt: process.env.JWT_SECRET ? 'Configured' : 'Not configured'
+  });
+});
+
+// Deployment test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'Deployment test successful',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    platform: process.env.VERCEL ? 'Vercel' : 'Local',
+    nodeVersion: process.version
   });
 });
 
@@ -79,15 +121,22 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Start server if not in Vercel environment
+// Start server
 const PORT = process.env.PORT || 5000;
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 API available at http://localhost:${PORT}/api`);
+// Try to start the server, and if port 5000 is in use, try port 5001
+const startServer = (port) => {
+  const server = app.listen(port, () => {
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(`📍 API available at http://localhost:${port}/api`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && port === 5000) {
+      console.log(`⚠️ Port ${port} is already in use, trying port 5001...`);
+      startServer(5001);
+    } else {
+      console.error('❌ Server error:', err);
+    }
   });
-}
+};
 
-// Export the Express app for Vercel
-export default app;
+startServer(PORT);

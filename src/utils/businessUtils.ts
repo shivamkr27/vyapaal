@@ -80,6 +80,10 @@ export const hasPermission = (
   module: Permission['module'],
   action: Permission['actions'][0]
 ): boolean => {
+  if (!userPermissions || userPermissions.length === 0) {
+    return false;
+  }
+
   const modulePermission = userPermissions.find(p => p.module === module);
   return modulePermission ? modulePermission.actions.includes(action) : false;
 };
@@ -201,25 +205,9 @@ export const getUserBusinessByEmail = (userEmail: string): Business | null => {
   return null;
 };
 
-// Get the correct user ID for localStorage data (for API compatibility)
+// This function is no longer needed as we're using MongoDB for all data storage
+// Keeping it as a stub for backward compatibility
 export const getDataUserId = (userEmail: string): string | null => {
-  const business = getUserBusinessByEmail(userEmail);
-  if (!business) return null;
-
-  // If user is the business owner, return the owner ID
-  if (business.ownerEmail === userEmail) {
-    return business.ownerId;
-  }
-
-  // If user is staff, find their original user ID from when they joined
-  const staffMember = business.staff.find((s: BusinessStaff) => s.email === userEmail);
-  if (staffMember) {
-    // For staff, we need to find their original user ID
-    // Since we don't store it, we'll use the business owner's ID for now
-    // This means staff will see the same data as the owner (which might be intended)
-    return business.ownerId;
-  }
-
   return null;
 };
 

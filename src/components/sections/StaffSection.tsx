@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Download } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Download, Loader, XCircle } from 'lucide-react';
 import { Staff, User } from '../../types';
 import StaffForm from '../forms/StaffForm';
 import { exportToExcel, exportToPDF } from '../../utils/export';
+import apiService from '../../services/api';
 
 interface StaffSectionProps {
   user: User;
@@ -18,39 +19,86 @@ const StaffSection: React.FC<StaffSectionProps> = ({ user }) => {
     loadStaff();
   }, [user.id]);
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const loadStaff = async () => {
     try {
-      // Note: Staff API not implemented yet, this is a placeholder
-      console.log('🔄 Staff functionality not implemented in API yet');
-      setStaff([]); // Staff not implemented in API yet
+      setLoading(true);
+      setError(null);
+
+      console.log('🔄 Loading staff from MongoDB API...');
+      const staffData = await apiService.getStaff();
+
+      setStaff(staffData || []);
+      console.log('✅ Loaded staff from API:', {
+        staff: staffData?.length || 0,
+        sampleStaff: staffData?.[0], // Log first staff member to see structure
+        allStaffIds: staffData?.map(s => ({ id: s.id, _id: s._id, name: s.staffName }))
+      });
     } catch (error) {
       console.error('❌ Error loading staff:', error);
-      alert('Failed to load staff data. Please check your connection and try again.');
+      setError('Failed to load staff data. Please check your connection and try again.');
+      setStaff([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSaveStaff = async (staffData: Omit<Staff, 'id' | 'userId' | 'createdAt'>) => {
     try {
-      // Note: Staff API not implemented yet, this is a placeholder
-      console.log('🔄 Staff save functionality not implemented in API yet');
-      alert('Staff functionality is not available yet. Please use other sections for now.');
+      setLoading(true);
+      setError(null);
+
+      if (editingStaff) {
+        // Update existing staff member
+        console.log('Updating staff member:', editingStaff.id, staffData);
+        console.log('Full editingStaff object:', editingStaff);
+
+        // Use _id if id is not available (fallback)
+        const staffId = editingStaff.id || editingStaff._id || (editingStaff as any)._id;
+        console.log('Resolved staff ID:', staffId);
+
+        if (!staffId) {
+          console.error('Staff ID is missing from editingStaff:', editingStaff);
+          throw new Error('Staff ID is missing - cannot update staff. Please refresh the page and try again.');
+        }
+
+        await apiService.updateStaff(staffId.toString(), staffData);
+      } else {
+        // Add new staff member
+        console.log('Adding new staff member:', staffData);
+        await apiService.createStaff(staffData);
+      }
+
+      // Reload staff after saving
+      await loadStaff();
       setShowForm(false);
       setEditingStaff(null);
     } catch (error) {
       console.error('❌ Error saving staff:', error);
-      alert('Failed to save staff. Please try again.');
+      setError('Failed to save staff. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteStaff = async (staffMember: Staff) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
       try {
-        // Note: Staff API not implemented yet, this is a placeholder
-        console.log('🔄 Staff delete functionality not implemented in API yet');
-        alert('Staff functionality is not available yet. Please use other sections for now.');
+        setLoading(true);
+        setError(null);
+
+        // Delete staff member through API
+        await apiService.deleteStaff(staffMember.id);
+
+        // Reload staff after deleting
+        await loadStaff();
       } catch (error) {
         console.error('❌ Error deleting staff:', error);
-        alert('Failed to delete staff. Please try again.');
+        setError('Failed to delete staff. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -82,6 +130,25 @@ const StaffSection: React.FC<StaffSectionProps> = ({ user }) => {
 
   return (
     <div className="space-y-6">
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+          <XCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-red-700 font-medium">{error}</p>
+            <button
+              onClick={() => {
+                setError(null);
+                loadStaff();
+              }}
+              className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
         <div className="flex flex-wrap items-center space-x-4">
@@ -91,8 +158,9 @@ const StaffSection: React.FC<StaffSectionProps> = ({ user }) => {
               setEditingStaff(null);
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            disabled={loading}
           >
-            <Plus className="h-4 w-4" />
+            {loading ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             <span>Add Staff</span>
           </button>
 
@@ -142,7 +210,22 @@ const StaffSection: React.FC<StaffSectionProps> = ({ user }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStaff.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center">
+                    <div className="flex justify-center items-center">
+                      <Loader className="h-8 w-8 text-blue-500 animate-spin" />
+                      <span className="ml-2 text-gray-600">Loading staff data...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-red-500">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredStaff.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     {searchTerm ? 'No staff members found matching your search.' : 'No staff members found. Add your first staff member to get started.'}
@@ -172,6 +255,7 @@ const StaffSection: React.FC<StaffSectionProps> = ({ user }) => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
                         onClick={() => {
+                          console.log('Editing staff member:', staffMember);
                           setEditingStaff(staffMember);
                           setShowForm(true);
                         }}

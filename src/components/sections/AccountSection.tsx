@@ -270,7 +270,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({ user }) => {
                             {new Date(order.createdAt).toLocaleDateString('en-IN')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-amber-700">
-                            #{order.id.slice(-6)}
+                            #{order.id ? order.id.slice(-6) : 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{order.item}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{order.category}</td>

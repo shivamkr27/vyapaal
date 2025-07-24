@@ -25,7 +25,8 @@ import {
   XCircle
 } from 'lucide-react';
 import { User, Business, Permission } from '../types';
-import { getUserBusinessByEmail, hasPermission } from '../utils/businessUtils';
+import { hasPermission } from '../utils/businessUtils';
+import apiService from '../services/api';
 import OrderSection from './sections/OrderSection';
 import RateSection from './sections/RateSection';
 import InventorySection from './sections/InventorySection';
@@ -62,50 +63,111 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     message: string;
     createdAt: string;
   }>>([]);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     // Load user preferences from database
     const savedTheme = user.preferences?.theme as 'light' | 'dark' || 'light';
     const savedNotifications = user.preferences?.notifications || false;
     const savedLanguage = user.preferences?.language || 'en';
-    const savedAlerts = user.alerts || [];
+
+    // Convert alerts from user object to the format expected by the component
+    const formattedAlerts = (user.alerts || []).map(alert => ({
+      id: alert.id,
+      type: alert.type as 'info' | 'warning' | 'error' | 'success',
+      title: alert.type.charAt(0).toUpperCase() + alert.type.slice(1), // Capitalize the type as title
+      message: alert.message,
+      createdAt: alert.timestamp
+    }));
 
     setTheme(savedTheme);
     setNotifications(savedNotifications);
     setLanguage(savedLanguage);
-    setAlerts(savedAlerts);
+    setAlerts(formattedAlerts);
 
     // Apply theme to document
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
 
-    // Load business and user permissions
-    const userBusiness = getUserBusinessByEmail(user.email);
-    setBusiness(userBusiness);
+    // Use business data from user object
+    if (user.business) {
+      // Set business info (we'll need to fetch more details from API later)
+      setBusiness({
+        id: user.business.id,
+        businessName: user.business.businessName,
+        businessCode: user.business.businessCode,
+        ownerEmail: user.email, // Assume current user is owner if they have isBusinessOwner flag
+        ownerId: user.id,
+        createdAt: user.createdAt,
+        staff: [],
+        roles: []
+      });
 
-    if (userBusiness) {
-      // Check if user is business owner by email (more reliable than user.isBusinessOwner)
-      const isBusinessOwner = userBusiness.ownerEmail === user.email;
+      // Define permissions outside of the conditional blocks to avoid scope issues
+      const defaultPermissions = [
+        { module: 'dashboard', actions: ['read'] },
+        { module: 'orders', actions: ['read'] },
+        { module: 'inventory', actions: ['read'] },
+        { module: 'rates', actions: ['read'] },
+        { module: 'customers', actions: ['read'] }
+      ];
 
-      if (isBusinessOwner) {
+      const ownerPermissions = [
+        { module: 'dashboard', actions: ['read', 'create', 'update', 'delete'] },
+        { module: 'orders', actions: ['read', 'create', 'update', 'delete'] },
+        { module: 'inventory', actions: ['read', 'create', 'update', 'delete'] },
+        { module: 'staff', actions: ['read', 'create', 'update', 'delete'] },
+        { module: 'rates', actions: ['read', 'create', 'update', 'delete'] },
+        { module: 'suppliers', actions: ['read', 'create', 'update', 'delete'] },
+        { module: 'customers', actions: ['read', 'create', 'update', 'delete'] }
+      ];
+
+      // Set permissions from user object
+      if (user.business.permissions && Array.isArray(user.business.permissions) && user.business.permissions.length > 0) {
+        console.log('Setting permissions from user business object:', user.business.permissions);
+        setUserPermissions([...user.business.permissions]); // Create a new array to avoid reference issues
+        setDebugInfo(`Permissions set from user object: ${user.business.permissions.length} permissions`);
+      } else if (user.business.isBusinessOwner) {
         // Business owner has all permissions
-        setUserPermissions([
-          { module: 'dashboard', actions: ['read', 'create', 'update', 'delete'] },
-          { module: 'orders', actions: ['read', 'create', 'update', 'delete'] },
-          { module: 'inventory', actions: ['read', 'create', 'update', 'delete'] },
-          { module: 'staff', actions: ['read', 'create', 'update', 'delete'] },
-          { module: 'rates', actions: ['read', 'create', 'update', 'delete'] },
-          { module: 'suppliers', actions: ['read', 'create', 'update', 'delete'] },
-          { module: 'customers', actions: ['read', 'create', 'update', 'delete'] }
-        ]);
+        console.log('Setting owner permissions:', ownerPermissions);
+        setUserPermissions([...ownerPermissions]); // Create a new array to avoid reference issues
+        setDebugInfo('Permissions set for business owner');
       } else {
-        // Staff member - get permissions from their role
-        const staffMember = userBusiness.staff.find(s => s.email === user.email);
-        if (staffMember) {
-          setUserPermissions(staffMember.permissions);
-        }
+        // Fetch business details to get the correct permissions for this user's role
+        const fetchBusinessDetails = async () => {
+          try {
+            const response = await apiService.getBusinessDetails();
+            if (response && response.business) {
+              // Find the staff member in the business
+              const staffMember = response.business.staff.find(s => s.email === user.email);
+              if (staffMember && staffMember.permissions) {
+                console.log('Setting permissions from business API:', staffMember.permissions);
+                setUserPermissions(staffMember.permissions);
+                setDebugInfo(`Permissions set from API: ${staffMember.permissions.length} permissions for role ${staffMember.role}`);
+              } else {
+                // If staff member not found or no permissions, use default minimal permissions
+                console.log('Setting default permissions:', defaultPermissions);
+                setUserPermissions([...defaultPermissions]); // Create a new array to avoid reference issues
+                setDebugInfo('Staff member not found in business, using default permissions');
+              }
+            } else {
+              // If no business found, use default permissions
+              console.log('Setting default permissions (no business found):', defaultPermissions);
+              setUserPermissions([...defaultPermissions]); // Create a new array to avoid reference issues
+              setDebugInfo('No business found, using default permissions');
+            }
+          } catch (error) {
+            console.error('Failed to fetch business details:', error);
+            // Use default minimal permissions as fallback
+            console.log('Setting fallback permissions:', defaultPermissions);
+            setUserPermissions([...defaultPermissions]); // Create a new array to avoid reference issues
+            setDebugInfo('Failed to fetch business details, using fallback permissions');
+          }
+        };
+
+        fetchBusinessDetails();
       }
     }
-  }, [user.email]);
+  }, [user]);
 
   const savePreferences = async () => {
     try {
@@ -156,8 +218,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   ];
 
   const menuItems = getAllMenuItems().filter(item => {
-    // Check if user is business owner by email
-    const isBusinessOwner = business?.ownerEmail === user.email;
+    // Check if user is business owner
+    const isBusinessOwner = user.business?.isBusinessOwner === true;
 
     // Show all items to business owner
     if (isBusinessOwner) return true;
@@ -226,7 +288,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{user.email}</p>
                 {business && (
                   <p className={`text-xs font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'} mt-1`}>
-                    {business.businessName}
+                    {business.businessName} {user.business?.role ? `(${user.business.role})` : ''}
                   </p>
                 )}
               </div>
@@ -259,6 +321,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 );
               })}
             </nav>
+
+            {/* Debug Info */}
+            {debugInfo && (
+              <div className="px-4 py-2 text-xs text-gray-500 border-t border-gray-200">
+                <p>Debug: {debugInfo}</p>
+              </div>
+            )}
 
             {/* Logout Button - Fixed at bottom */}
             <div className={`p-6 border-t ${theme === 'dark' ? 'border-gray-700' : 'border-amber-200/50'} flex-shrink-0`}>

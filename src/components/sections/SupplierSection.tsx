@@ -24,14 +24,14 @@ const SupplierSection: React.FC<SupplierSectionProps> = ({ user }) => {
     try {
       console.log('🔄 Loading suppliers and inventory from MongoDB API...');
       const [suppliersData, inventoryData] = await Promise.all([
-        apiService.getCustomers(), // Using customers API as suppliers placeholder
+        apiService.getSuppliers(),
         apiService.getInventory()
       ]);
 
-      setSuppliers([]); // Suppliers not implemented in API yet
+      setSuppliers(suppliersData || []);
       setInventory(inventoryData || []);
       console.log('✅ Loaded from API:', {
-        suppliers: 0, // Placeholder
+        suppliers: suppliersData?.length || 0,
         inventory: inventoryData?.length || 0
       });
     } catch (error) {
@@ -42,9 +42,19 @@ const SupplierSection: React.FC<SupplierSectionProps> = ({ user }) => {
 
   const handleSaveSupplier = async (supplierData: Omit<Supplier, 'id' | 'userId' | 'createdAt'>) => {
     try {
-      // Note: Suppliers API not implemented yet, this is a placeholder
-      console.log('🔄 Supplier functionality not implemented in API yet');
-      alert('Supplier functionality is not available yet. Please use other sections for now.');
+      console.log('🔄 Saving supplier:', supplierData);
+
+      if (editingSupplier) {
+        // Update existing supplier
+        await apiService.updateSupplier(editingSupplier.id, supplierData);
+        console.log('✅ Supplier updated successfully');
+      } else {
+        // Create new supplier
+        await apiService.createSupplier(supplierData);
+        console.log('✅ Supplier created successfully');
+      }
+
+      await loadData(); // Reload data to reflect changes
       setShowForm(false);
       setEditingSupplier(null);
     } catch (error) {
@@ -54,11 +64,12 @@ const SupplierSection: React.FC<SupplierSectionProps> = ({ user }) => {
   };
 
   const handleDeleteSupplier = async (supplier: Supplier) => {
-    if (window.confirm('Are you sure you want to delete this supplier record?')) {
+    if (window.confirm('Are you sure you want to delete this supplier record? This will also adjust the inventory accordingly.')) {
       try {
-        // Note: Suppliers API not implemented yet, this is a placeholder
-        console.log('🔄 Supplier delete functionality not implemented in API yet');
-        alert('Supplier functionality is not available yet. Please use other sections for now.');
+        console.log('🔄 Deleting supplier:', supplier.id);
+        await apiService.deleteSupplier(supplier.id);
+        console.log('✅ Supplier deleted successfully');
+        await loadData(); // Reload data to reflect changes
       } catch (error) {
         console.error('❌ Error deleting supplier:', error);
         alert('Failed to delete supplier. Please try again.');

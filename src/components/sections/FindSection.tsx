@@ -69,11 +69,12 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
     // Search in orders
     allData.orders.forEach(order => {
       const matches = [];
-      if (order.id.toLowerCase().includes(searchLower)) matches.push('Order ID');
-      if (order.customerName.toLowerCase().includes(searchLower)) matches.push('Customer Name');
-      if (order.customerPhone.includes(searchLower)) matches.push('Customer Phone');
-      if (order.item.toLowerCase().includes(searchLower)) matches.push('Item');
-      if (order.category.toLowerCase().includes(searchLower)) matches.push('Category');
+      if (order.orderId && order.orderId.toLowerCase().includes(searchLower)) matches.push('Order ID');
+      if (order.id && order.id.toLowerCase().includes(searchLower)) matches.push('Order ID');
+      if (order.customerName && order.customerName.toLowerCase().includes(searchLower)) matches.push('Customer Name');
+      if (order.customerPhone && order.customerPhone.toLowerCase().includes(searchLower)) matches.push('Customer Phone');
+      if (order.item && order.item.toLowerCase().includes(searchLower)) matches.push('Item');
+      if (order.category && order.category.toLowerCase().includes(searchLower)) matches.push('Category');
 
       if (matches.length > 0) {
         results.push({
@@ -87,9 +88,9 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
     // Search in rates
     allData.rates.forEach(rate => {
       const matches = [];
-      if (rate.item.toLowerCase().includes(searchLower)) matches.push('Item');
-      if (rate.category.toLowerCase().includes(searchLower)) matches.push('Category');
-      if (rate.rate.toString().includes(searchLower)) matches.push('Rate');
+      if (rate.item && rate.item.toLowerCase().includes(searchLower)) matches.push('Item');
+      if (rate.category && rate.category.toLowerCase().includes(searchLower)) matches.push('Category');
+      if (rate.rate && rate.rate.toString().includes(searchLower)) matches.push('Rate');
 
       if (matches.length > 0) {
         results.push({
@@ -103,9 +104,9 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
     // Search in inventory
     allData.inventory.forEach(item => {
       const matches = [];
-      if (item.item.toLowerCase().includes(searchLower)) matches.push('Item');
-      if (item.category.toLowerCase().includes(searchLower)) matches.push('Category');
-      if (item.quantity.toString().includes(searchLower)) matches.push('Quantity');
+      if (item.item && item.item.toLowerCase().includes(searchLower)) matches.push('Item');
+      if (item.category && item.category.toLowerCase().includes(searchLower)) matches.push('Category');
+      if (item.quantity && item.quantity.toString().includes(searchLower)) matches.push('Quantity');
 
       if (matches.length > 0) {
         results.push({
@@ -119,10 +120,10 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
     // Search in suppliers
     allData.suppliers.forEach(supplier => {
       const matches = [];
-      if (supplier.supplierName.toLowerCase().includes(searchLower)) matches.push('Supplier Name');
-      if (supplier.billNo.toLowerCase().includes(searchLower)) matches.push('Bill No');
-      if (supplier.item.toLowerCase().includes(searchLower)) matches.push('Item');
-      if (supplier.category.toLowerCase().includes(searchLower)) matches.push('Category');
+      if (supplier.supplierName && supplier.supplierName.toLowerCase().includes(searchLower)) matches.push('Supplier Name');
+      if (supplier.billNo && supplier.billNo.toLowerCase().includes(searchLower)) matches.push('Bill No');
+      if (supplier.item && supplier.item.toLowerCase().includes(searchLower)) matches.push('Item');
+      if (supplier.category && supplier.category.toLowerCase().includes(searchLower)) matches.push('Category');
 
       if (matches.length > 0) {
         results.push({
@@ -136,10 +137,10 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
     // Search in staff
     allData.staff.forEach(staffMember => {
       const matches = [];
-      if (staffMember.staffId.toLowerCase().includes(searchLower)) matches.push('Staff ID');
-      if (staffMember.staffName.toLowerCase().includes(searchLower)) matches.push('Staff Name');
-      if (staffMember.phoneNo.includes(searchLower)) matches.push('Phone No');
-      if (staffMember.role.toLowerCase().includes(searchLower)) matches.push('Role');
+      if (staffMember.staffId && staffMember.staffId.toLowerCase().includes(searchLower)) matches.push('Staff ID');
+      if (staffMember.staffName && staffMember.staffName.toLowerCase().includes(searchLower)) matches.push('Staff Name');
+      if (staffMember.phoneNo && staffMember.phoneNo.toLowerCase().includes(searchLower)) matches.push('Phone No');
+      if (staffMember.role && staffMember.role.toLowerCase().includes(searchLower)) matches.push('Role');
 
       if (matches.length > 0) {
         results.push({
@@ -153,8 +154,8 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
     // Search in customers
     allData.customers.forEach(customer => {
       const matches = [];
-      if (customer.name.toLowerCase().includes(searchLower)) matches.push('Customer Name');
-      if (customer.phone.includes(searchLower)) matches.push('Phone');
+      if (customer.name && customer.name.toLowerCase().includes(searchLower)) matches.push('Customer Name');
+      if (customer.phone && customer.phone.toLowerCase().includes(searchLower)) matches.push('Phone');
 
       if (matches.length > 0) {
         results.push({
@@ -206,7 +207,9 @@ const FindSection: React.FC<FindSectionProps> = ({ user }) => {
       case 'order':
         return (
           <div>
-            <p className="font-medium">Order #{result.data.id.slice(-6)}</p>
+            <p className="font-medium">
+              {result.data.orderId || (result.data.id ? `Order #${result.data.id.slice(-6)}` : 'Order')}
+            </p>
             <p className="text-sm text-gray-600">{result.data.customerName} - {result.data.item} ({result.data.category})</p>
             <p className="text-sm text-gray-500">₹{result.data.totalAmount} - {result.data.status}</p>
           </div>

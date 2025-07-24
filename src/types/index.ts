@@ -8,6 +8,11 @@ export interface User {
     businessName: string;
     businessCode: string;
     isBusinessOwner: boolean;
+    role?: string;
+    permissions?: Array<{
+      module: 'dashboard' | 'orders' | 'inventory' | 'staff' | 'rates' | 'suppliers' | 'customers';
+      actions: Array<'read' | 'create' | 'update' | 'delete'>;
+    }>;
   };
   preferences?: {
     theme: string;
@@ -16,7 +21,7 @@ export interface User {
   };
   alerts?: Array<{
     id: string;
-    type: string;
+    type: 'info' | 'warning' | 'error' | 'success';
     message: string;
     timestamp: string;
     read: boolean;
@@ -42,6 +47,7 @@ export interface BusinessStaff {
   phone: string;
   role: string;
   permissions: Permission[];
+  salary: number;
   joinedAt: string;
   isActive: boolean;
 }
@@ -61,9 +67,18 @@ export interface Permission {
 
 export type UserRole = 'owner' | 'manager' | 'accountant' | 'delivery_boy' | 'sales_person' | 'inventory_manager' | 'custom';
 
+export interface OrderItem {
+  item: string;
+  category: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
 export interface Order {
-  id: string;
-  customerId: string;
+  id?: string;
+  orderId?: string;  // Custom order ID with format ORD-YYYYMMDD-XXXX
+  customerId?: string;
   customerName: string;
   customerPhone: string;
   item: string;
@@ -76,7 +91,8 @@ export interface Order {
   status: 'pending' | 'delivered';
   deliveryDate: string;
   createdAt: string;
-  userId: string;
+  userId?: string;
+  items?: OrderItem[]; // For multiple items in an order
 }
 
 export interface Rate {
@@ -118,10 +134,14 @@ export interface Staff {
   id: string;
   staffId: string;
   staffName: string;
+  email?: string;
   phoneNo: string;
   role: string;
+  roleCode?: string;
+  permissions?: Permission[];
   joiningDate: string;
   salary: number;
+  isActive?: boolean;
   userId: string;
   createdAt: string;
 }

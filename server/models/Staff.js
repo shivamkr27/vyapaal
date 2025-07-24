@@ -16,6 +16,11 @@ const staffSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  email: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   phoneNo: {
     type: String,
     required: true,
@@ -23,9 +28,26 @@ const staffSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    required: true,
-    trim: true
+    trim: true,
+    default: '' // Allow empty role initially
   },
+  roleCode: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  permissions: [{
+    module: {
+      type: String,
+      enum: ['orders', 'inventory', 'staff', 'rates', 'suppliers', 'customers', 'dashboard'],
+      required: true
+    },
+    actions: [{
+      type: String,
+      enum: ['read', 'create', 'update', 'delete'],
+      required: true
+    }]
+  }],
   joiningDate: {
     type: Date,
     required: true
@@ -33,7 +55,12 @@ const staffSchema = new mongoose.Schema({
   salary: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+    default: 0
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
 }, {
   timestamps: true
