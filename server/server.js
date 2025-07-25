@@ -121,22 +121,27 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
+// Export the app for Vercel serverless functions
+export default app;
 
-// Try to start the server, and if port 5000 is in use, try port 5001
-const startServer = (port) => {
-  const server = app.listen(port, () => {
-    console.log(`🚀 Server running on port ${port}`);
-    console.log(`📍 API available at http://localhost:${port}/api`);
-  }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE' && port === 5000) {
-      console.log(`⚠️ Port ${port} is already in use, trying port 5001...`);
-      startServer(5001);
-    } else {
-      console.error('❌ Server error:', err);
-    }
-  });
-};
+// Start server only in development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
 
-startServer(PORT);
+  // Try to start the server, and if port 5000 is in use, try port 5001
+  const startServer = (port) => {
+    const server = app.listen(port, () => {
+      console.log(`🚀 Server running on port ${port}`);
+      console.log(`📍 API available at http://localhost:${port}/api`);
+    }).on('error', (err) => {
+      if (err.code === 'EADDRINUSE' && port === 5000) {
+        console.log(`⚠️ Port ${port} is already in use, trying port 5001...`);
+        startServer(5001);
+      } else {
+        console.error('❌ Server error:', err);
+      }
+    });
+  };
+
+  startServer(PORT);
+}
