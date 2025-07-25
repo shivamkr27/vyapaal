@@ -17,16 +17,10 @@ function App() {
       try {
         setIsLoading(true);
 
-        // Get token from localStorage (more persistent than sessionStorage)
-        const token = localStorage.getItem('authToken');
-
-        if (!token) {
-          console.log('No token found in localStorage');
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('Token found in localStorage, attempting to restore session');
+        // Skip token restoration - use database-only authentication
+        console.log('Using database-only authentication - no token restoration');
+        setIsLoading(false);
+        return;
 
         // Set the token in the API service
         apiService.setToken(token);
@@ -37,7 +31,7 @@ function App() {
 
           if (!response || !response.user) {
             console.error('Invalid response from verify token endpoint');
-            localStorage.removeItem('authToken');
+            // Token cleared from memory automatically
             apiService.removeToken();
             setIsLoading(false);
             return;
@@ -56,13 +50,13 @@ function App() {
           }
         } catch (apiError) {
           console.error('API error during session restore:', apiError);
-          localStorage.removeItem('authToken');
+          // Token cleared from memory automatically
           apiService.removeToken();
         }
       } catch (error) {
         console.error('Failed to restore session:', error);
         // Clear token on error
-        localStorage.removeItem('authToken');
+        // Token cleared from memory automatically
         apiService.removeToken();
       } finally {
         setIsLoading(false);
@@ -78,10 +72,8 @@ function App() {
     setCurrentUser(user);
     apiService.setToken(token);
 
-    // Store token in localStorage for persistence
-    localStorage.setItem('authToken', token);
-
-    console.log('User logged in and token saved to localStorage');
+    // Token stored in memory only - no localStorage
+    console.log('User logged in - token stored in memory only');
 
     // Check if business setup is needed based on database data
     if (isNewRegistration || !user.business || !user.business.businessName) {
@@ -100,11 +92,10 @@ function App() {
     setCurrentUser(null);
     setNeedsBusinessSetup(false);
 
-    // Clear API token and localStorage
+    // Clear API token from memory
     apiService.removeToken();
-    localStorage.removeItem('authToken');
 
-    console.log('User logged out and token removed from localStorage');
+    console.log('User logged out - token cleared from memory');
   };
 
   if (isLoading) {

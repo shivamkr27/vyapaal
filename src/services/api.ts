@@ -1,15 +1,21 @@
 // Dynamic API URL based on environment
 const API_BASE_URL = (() => {
-  // In production (deployed), use the same domain
-  if (import.meta.env.PROD) {
+  // Check if we're on a Vercel deployment
+  if (typeof window !== 'undefined' && (
+    window.location.hostname.includes('vercel.app') ||
+    window.location.hostname.includes('vercel.com') ||
+    import.meta.env.PROD
+  )) {
     return '/api';
   }
 
   // In development, use localhost with port detection
   let port = 5000;
-  const storedPort = sessionStorage.getItem('apiPort');
-  if (storedPort) {
-    port = parseInt(storedPort, 10);
+  if (typeof window !== 'undefined') {
+    const storedPort = sessionStorage.getItem('apiPort');
+    if (storedPort) {
+      port = parseInt(storedPort, 10);
+    }
   }
 
   return `http://localhost:${port}/api`;
