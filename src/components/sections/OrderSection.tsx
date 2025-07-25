@@ -443,7 +443,8 @@ const OrderSection: React.FC<OrderSectionProps> = ({ user, userPermissions = [] 
           />
         )}
       </div>
-      );
+    </div>
+  );
 };
 
-      export default OrderSection;
+export default OrderSection;
