@@ -258,9 +258,25 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
   return (
     <UserDataProvider user={user}>
-      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50'} flex transition-colors duration-300`}>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50'} flex flex-col lg:flex-row transition-colors duration-300`}>
+        {/* Mobile Header */}
+        <div className={`lg:hidden fixed top-0 left-0 right-0 z-40 h-16 ${theme === 'dark' ? 'bg-gray-800' : 'glass-cream'} shadow-elegant flex items-center justify-between px-4`}>
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-white to-amber-50 rounded-lg flex items-center justify-center shadow-warm">
+              <Building2 className="h-5 w-5 text-amber-600" />
+            </div>
+            <span className="text-xl font-display font-bold text-amber-600">Vyapaal</span>
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 rounded-lg text-gray-600 hover:bg-white/60 transition-colors"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
+
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-50 w-64 ${theme === 'dark' ? 'bg-gray-800' : 'glass-cream'} shadow-elegant transform transition-all duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0`}>
+        <div className={`fixed inset-y-0 left-0 z-50 w-80 lg:w-64 ${theme === 'dark' ? 'bg-gray-800' : 'glass-cream'} shadow-elegant transform transition-all duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0`}>
           <div className={`flex items-center justify-between h-20 px-6 border-b ${theme === 'dark' ? 'border-gray-700 bg-gradient-to-r from-gray-800 to-gray-700' : 'border-amber-200/50 bg-gradient-to-r from-amber-500 to-orange-600'}`}>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-white to-amber-50 rounded-xl flex items-center justify-center shadow-warm">
@@ -354,20 +370,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-64">
-          {/* Header */}
-          <header className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'glass-cream border-amber-200/50'} shadow-elegant border-b sticky top-0 z-30`}>
+        <div className="flex-1 pt-16 lg:pt-0 lg:ml-0">
+          {/* Header - Hidden on mobile, shown on desktop */}
+          <header className={`hidden lg:block ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'glass-cream border-amber-200/50'} shadow-elegant border-b sticky top-0 z-30`}>
             <div className="flex items-center justify-between h-20 px-6">
               <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setIsSidebarOpen(true)}
-                  className={`lg:hidden p-3 rounded-xl transition-colors ${theme === 'dark'
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-700'
-                    : 'text-gray-600 hover:text-amber-700 hover:bg-white/60'
-                    }`}
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
                 <div>
                   <h1 className={`text-3xl font-display font-bold ${theme === 'dark' ? 'text-white' : 'gradient-text-warm'} capitalize`}>
                     {activeSection === 'accounts' ? 'Account Of' : activeSection}
@@ -422,7 +429,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           </header>
 
           {/* Content */}
-          <main className={`p-8 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-orange-50/50 via-amber-50/50 to-yellow-50/50'} min-h-screen`}>
+          <main className={`p-4 lg:p-8 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gradient-to-br from-orange-50/50 via-amber-50/50 to-yellow-50/50'} min-h-screen`}>
+            {/* Mobile Section Header */}
+            <div className="lg:hidden mb-6">
+              <h1 className={`text-2xl font-display font-bold ${theme === 'dark' ? 'text-white' : 'gradient-text-warm'} capitalize`}>
+                {activeSection === 'accounts' ? 'Account Of' : activeSection}
+              </h1>
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage your business efficiently</p>
+            </div>
             {renderSection()}
           </main>
         </div>
