@@ -2,7 +2,7 @@
 
 A comprehensive business management system built with React, TypeScript, Node.js, and MongoDB Atlas.
 
-## 🚀 Features
+# 🚀 Features
 
 - **User Authentication**: Secure login/register with JWT
 - **Order Management**: Create, update, delete, and track orders
